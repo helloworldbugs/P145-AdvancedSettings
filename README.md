@@ -6,7 +6,7 @@
 > 平台签名、直连本机 adb 拿 root、自带后台守护，**不依赖 EVCC 或任何第三方 App**。
 
 - 包名：`com.p145.advancedsettings`
-- 当前版本：**1.4**（versionCode 5）
+- 当前版本：**1.6**（versionCode 7，以 `AndroidManifest.xml` 为准）
 - APK 体积：约 62 KB
 - 目标设备：Android 9（API 28）、1920×1080、density 160、adbd 常驻 root
 
@@ -54,6 +54,7 @@
 ```
 P145-AdvancedSettings/
 ├── README.md                 本文件
+├── .gitignore                忽略规则（私钥 / 产物 / 临时）
 ├── AndroidManifest.xml       清单（targetSdk 25，见下方说明）
 ├── build.ps1                 一键构建（aapt2 + javac + d8 + apksigner，不用 gradle）
 ├── src/                      源码
@@ -75,10 +76,15 @@ P145-AdvancedSettings/
 ├── assets/                   注入用的 Frida 脚本（会部署到车机）
 │   ├── hook_icc.js
 │   └── hook_volume_all.js
-├── keys/                     平台签名材料（⚠️ 私钥，勿外传）
-├── dist/advanced-settings.apk  已构建产物
-└── screenshots/              界面截图
+├── docs/screenshots/         界面截图
+├── .dsh/skills/              项目需求技能（需求与约束的真相源）
+├── keys/                     平台签名材料（⚠️ 私钥，不入库、勿外传）
+├── build/                    构建产物（不入库）
+└── dist/advanced-settings.apk  发布副本（不入库）
 ```
+
+> 仓库用本地 git（`main` 分支）。`keys/`、`build/`、`dist/`、`tmp/`、`logs/` 已被 `.gitignore` 排除；
+> 需求与不可动的约束记在 `.dsh/skills/project-requirements/SKILL.md`，改动前先读。
 
 ---
 
@@ -272,6 +278,8 @@ shell.exec("am start-foreground-service -n com.p145.advancedsettings/.GuardServi
 | 1.2 | 菜单收敛为四类（概览 / 语音 / 媒体 / 关于），广播与日志移入关于页 |
 | 1.3 | 精简页面：删掉说明卡与占位卡，媒体页标题写完整 |
 | 1.4 | 功能卡改成「短标题 + 可展开详情」，展开状态按页记忆 |
+
+> 1.5 / 1.6 两次改动没有单独记档，以 `AndroidManifest.xml` 的版本号为准（当前 1.6 / versionCode 7）。
 
 ---
 
