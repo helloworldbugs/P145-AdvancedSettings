@@ -1,0 +1,32 @@
+# 构建产物与交付物（不入库）
+build/
+out/
+dist/
+*.apk
+*.aab
+*.jar
+*.dex
+*.class
+
+# 临时文件与日志
+tmp/
+logs/
+*.log
+
+# 平台签名材料：私钥绝不入库（keys/ 仅本机保留）
+keys/
+*.pk8
+*.pem
+*.jks
+*.keystore
+*.p12
+
+# 本地环境
+.env
+.env.*
+!.env.example
+.idea/
+*.iml
+.vscode/
+.DS_Store
+Thumbs.db

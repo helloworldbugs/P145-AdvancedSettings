@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="AppTheme" parent="@android:style/Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/bg0</item>
+        <item name="android:colorBackground">@color/bg0</item>
+        <item name="android:colorAccent">@color/accent</item>
+        <item name="android:statusBarColor">#00000000</item>
+        <item name="android:navigationBarColor">#00000000</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:textColorPrimary">@color/text</item>
+        <item name="android:textColorSecondary">@color/text2</item>
+    </style>
+
+    <style name="Card">
+        <item name="android:background">@drawable/card_bg</item>
+        <item name="android:padding">26dp</item>
+        <item name="android:orientation">vertical</item>
+    </style>
+
+    <style name="T1">
+        <item name="android:textColor">@color/text</item>
+        <item name="android:textSize">22sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:includeFontPadding">false</item>
+    </style>
+
+    <style name="T2">
+        <item name="android:textColor">@color/text2</item>
+        <item name="android:textSize">13sp</item>
+        <item name="android:includeFontPadding">false</item>
+    </style>
+
+    <style name="T3">
+        <item name="android:textColor">@color/text3</item>
+        <item name="android:textSize">12sp</item>
+        <item name="android:includeFontPadding">false</item>
+    </style>
+</resources>

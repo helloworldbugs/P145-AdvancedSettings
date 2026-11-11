@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">高级设置</string>
+    <string name="subtitle">P145 车机 · Frida Hook 控制台</string>
+    <string name="st_adb">ADB 通道</string>
+    <string name="st_root">Root 权限</string>
+    <string name="st_frida">Frida 运行时</string>
+    <string name="f_icc">屏蔽巡航退出播报</string>
+    <string name="f_icc_sub">DuerOS · speakTts</string>
+    <string name="f_vol">音量始终调媒体</string>
+    <string name="f_vol_sub">音量键 · 方控 · 旋钮 三入口</string>
+    <string name="guard">后台守护</string>
+    <string name="guard_sub">目标进程重启后自动补挂</string>
+    <string name="interval_label">轮询间隔</string>
+    <string name="btn_inject">立即注入</string>
+    <string name="btn_detach">重启目标</string>
+    <string name="bc_title">广播控制</string>
+    <string name="copy">复制</string>
+    <string name="log">日志</string>
+</resources>
