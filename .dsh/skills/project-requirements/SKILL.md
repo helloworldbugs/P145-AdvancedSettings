@@ -11,7 +11,7 @@ description: 本项目需求与约束的真相源。改动本项目前先读本�
 ## 需求
 - [R1] 本地 git 仓库与忽略规则（`keys/` `build/` `dist/` `tmp/` 日志不入库）— 已完成
 - [R2] 项目级需求技能为唯一真相源，随需求实时维护 — 已完成
-- [R3] 截图归入 `docs/screenshots/`，成品只落 `build/`、`dist/` — 进行中
+- [R3] 截图归入 `docs/screenshots/`，成品只落 `build/`、`dist/` — 已完成
 - [R4] README 与代码/目录对齐（版本以 AndroidManifest 为准）— 进行中
 
 ## 约束
