@@ -30,3 +30,6 @@ keys/
 .vscode/
 .DS_Store
 Thumbs.db
+
+# 历史资料 / 反编译产物（2026-11-12 从 D:\ARM\Auto 收纳进来，约 900 MB，不参与构建）
+reference/

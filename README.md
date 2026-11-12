@@ -54,10 +54,10 @@
 ```
 P145-AdvancedSettings/
 ├── README.md                 本文件
-├── .gitignore                忽略规则（私钥 / 产物 / 临时）
+├── .gitignore                忽略规则（私钥 / 产物 / 临时 / 历史资料）
 ├── AndroidManifest.xml       清单（targetSdk 25，见下方说明）
 ├── build.ps1                 一键构建（aapt2 + javac + d8 + apksigner，不用 gradle）
-├── src/                      源码
+├── src/                      源码（唯一参与编译的代码目录）
 │   └── com/p145/advancedsettings/
 │       ├── App.java
 │       ├── MainActivity.java         界面 + 菜单 + 折叠详情
@@ -76,12 +76,26 @@ P145-AdvancedSettings/
 ├── assets/                   注入用的 Frida 脚本（会部署到车机）
 │   ├── hook_icc.js
 │   └── hook_volume_all.js
-├── docs/screenshots/         界面截图
+├── docs/
+│   ├── screenshots/          界面截图
+│   └── P145车机改造记录.md   改造全过程技术记录（踩坑、失败方案、日志证据）
+├── reference/                ⚠️ 历史资料（反编译产物/工具链，约 900 MB）
+│   ├── README.md             各子目录说明
+│   ├── tools/                jadx / apktool / uber-apk-signer
+│   ├── icc/ volume/ voice/   三大改造方向的调研产物
+│   ├── magisk/ avm/ launcher/ lingshi/ audio/
 ├── .dsh/skills/              项目需求技能（需求与约束的真相源）
 ├── keys/                     平台签名材料（⚠️ 私钥，不入库、勿外传）
-├── build/                    构建产物（不入库）
+├── build/                    构建中间产物（不入库，可随手删）
 └── dist/advanced-settings.apk  发布副本（不入库）
 ```
+
+> **`reference/` 不参与构建**：`build.ps1` 只读 `src/`、`res/`、`assets/`、`AndroidManifest.xml`，
+> 打出来的 APK 里不会有任何历史资料（实测 28 个条目，零命中）。
+> 该目录整体被 `.gitignore` 忽略（体积大 + 多为反编译产物），详见 `reference/README.md`。
+
+> 仓库用本地 git（`main` 分支）。`keys/`、`build/`、`dist/`、`reference/`、`tmp/`、`logs/` 已被 `.gitignore` 排除；
+> 需求与不可动的约束记在 `.dsh/skills/project-requirements/SKILL.md`，改动前先读。
 
 > 仓库用本地 git（`main` 分支）。`keys/`、`build/`、`dist/`、`tmp/`、`logs/` 已被 `.gitignore` 排除；
 > 需求与不可动的约束记在 `.dsh/skills/project-requirements/SKILL.md`，改动前先读。

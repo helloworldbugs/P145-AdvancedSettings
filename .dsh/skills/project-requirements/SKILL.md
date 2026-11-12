@@ -13,6 +13,7 @@ description: 本项目需求与约束的真相源。改动本项目前先读本�
 - [R2] 项目级需求技能为唯一真相源，随需求实时维护 — 已完成
 - [R3] 截图归入 `docs/screenshots/`，成品只落 `build/`、`dist/` — 已完成
 - [R4] README 与代码/目录对齐（版本以 AndroidManifest 为准）— 已完成
+- [R5] 历史资料与项目文件分离：`reference/` 收纳、git 忽略、不参与打包 — 已完成
 
 ## 约束
 - 不用 gradle：`build.ps1` = aapt2 → javac → d8 → zipalign → apksigner 平台签名。
@@ -26,6 +27,10 @@ description: 本项目需求与约束的真相源。改动本项目前先读本�
 - 源码 `src/com/p145/advancedsettings/`（core/ 逻辑、ui/ 控件）｜资源 `res/`｜注入脚本 `assets/*.js`。
 - `build.ps1`、`AndroidManifest.xml` 留根目录：aapt2 直接读，别挪。
 - 成品 `build/advanced-settings.apk`、发布副本 `dist/`；截图 `docs/screenshots/`；临时 `tmp/`、日志 `logs/`。
+- 技术记录 `docs/P145车机改造记录.md`（入库，持续维护）。
+- `reference/` = 历史资料（反编译/工具链，约 900 MB），2026-11-12 从 `D:\ARM\Auto` 收纳而来；
+  **整体 git 忽略、绝不参与构建**（`build.ps1` 只读 src/res/assets/Manifest）。
 
 ## 变更记录（最多 5 条）
 - 2026-11-11 R1–R4：建仓、建需求技能、截图入 docs、README 对齐 1.6。
+- 2026-11-12 R5：历史资料统一收纳到 `reference/` 并 git 忽略，技术记录移入 `docs/`。
