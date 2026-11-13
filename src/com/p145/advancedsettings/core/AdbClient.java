@@ -52,7 +52,7 @@ public final class AdbClient {
         Socket socket = new Socket();
         try {
             socket.connect(new InetSocketAddress(HOST, PORT), 2500);
-            socket.setSoTimeout(300);
+            socket.setSoTimeout(800);
             socket.setTcpNoDelay(true);
             OutputStream out = socket.getOutputStream();
             InputStream in = socket.getInputStream();

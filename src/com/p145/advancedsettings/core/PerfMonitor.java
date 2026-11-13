@@ -30,7 +30,7 @@ public final class PerfMonitor {
 
     public static final String TAG = "P145ADV";
     public static final String SCRIPT = "perf_collect.sh";
-    private static final int SCRIPT_VER = 4;   // 4: TERM=dumb 去 ANSI
+    private static final int SCRIPT_VER = 6;   // 5: 修 /proc/<pid>/stat 的 pid 取值（原来取到 "stat"）
 
     /** 四个排行维度 */
     public enum Dim {

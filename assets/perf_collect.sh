@@ -68,6 +68,18 @@ sleep 1
 
 echo "Z $(get_total)"
 
-awk '{sub(/^[^)]*\) /,""); split(FILENAME,a,"/"); print "J", a[3], $12+$13}' /proc/[0-9]*/stat 2>/dev/null
+echo "$AL" | awk '{print $2}' > $D/.pids
+awk '
+{
+  if (index(FILENAME, ".pids") > 0) {
+    keep[$1] = 1
+  } else {
+    sub(/^[^)]*\) /,"")
+    split(FILENAME,a,"/")
+    if (keep[a[3]] != "") { print "J", a[3], $12+$13 }
+  }
+}
+' $D/.pids /proc/[0-9]*/stat 2>/dev/null
+rm -f $D/.pids
 
 rm -f $PC $PP
