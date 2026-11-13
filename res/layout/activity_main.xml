@@ -151,6 +151,36 @@
 
 
             <LinearLayout
+                android:id="@+id/nav_perf"
+                android:layout_width="match_parent"
+                android:layout_height="60dp"
+                android:layout_marginTop="8dp"
+                android:background="@drawable/nav_item"
+                android:clickable="true"
+                android:focusable="true"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingLeft="16dp"
+                android:paddingRight="16dp">
+
+                <View
+                    android:id="@+id/nav_dot_perf"
+                    android:layout_width="8dp"
+                    android:layout_height="8dp"
+                    android:background="@drawable/dot_idle" />
+
+                <TextView
+                    android:id="@+id/nav_txt_perf"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="12dp"
+                    android:duplicateParentState="true"
+                    android:text="性能"
+                    android:textColor="@color/nav_text"
+                    android:textSize="17sp" />
+            </LinearLayout>
+
+            <LinearLayout
                 android:id="@+id/nav_about"
                 android:layout_width="match_parent"
                 android:layout_height="60dp"
@@ -914,6 +944,252 @@
                     </ScrollView>
 
 
+                    <!-- 性能 -->
+                    <ScrollView
+                        android:id="@+id/page_perf"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:fillViewport="true"
+                        android:scrollbars="none"
+                        android:visibility="gone">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:orientation="vertical">
+
+                            <!-- 汇总条 -->
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:baselineAligned="false"
+                                android:orientation="horizontal">
+
+                                <LinearLayout
+                                    style="@style/Card"
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:paddingLeft="16dp"
+                                    android:paddingTop="12dp"
+                                    android:paddingRight="16dp"
+                                    android:paddingBottom="12dp">
+
+                                    <TextView
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:text="CPU 总占用"
+                                        android:textColor="@color/text3"
+                                        android:textSize="14sp" />
+
+                                    <TextView
+                                        android:id="@+id/sum_cpu"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:layout_marginTop="4dp"
+                                        android:text="—"
+                                        android:textColor="@color/text"
+                                        android:textSize="26sp"
+                                        android:textStyle="bold" />
+                                </LinearLayout>
+
+                                <LinearLayout
+                                    style="@style/Card"
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginLeft="12dp"
+                                    android:layout_weight="1"
+                                    android:paddingLeft="16dp"
+                                    android:paddingTop="12dp"
+                                    android:paddingRight="16dp"
+                                    android:paddingBottom="12dp">
+
+                                    <TextView
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:text="内存 合计"
+                                        android:textColor="@color/text3"
+                                        android:textSize="14sp" />
+
+                                    <TextView
+                                        android:id="@+id/sum_mem"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:layout_marginTop="4dp"
+                                        android:text="—"
+                                        android:textColor="@color/text"
+                                        android:textSize="26sp"
+                                        android:textStyle="bold" />
+                                </LinearLayout>
+
+                                <LinearLayout
+                                    style="@style/Card"
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginLeft="12dp"
+                                    android:layout_weight="1"
+                                    android:paddingLeft="16dp"
+                                    android:paddingTop="12dp"
+                                    android:paddingRight="16dp"
+                                    android:paddingBottom="12dp">
+
+                                    <TextView
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:text="磁盘 累计 I/O"
+                                        android:textColor="@color/text3"
+                                        android:textSize="14sp" />
+
+                                    <TextView
+                                        android:id="@+id/sum_disk"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:layout_marginTop="4dp"
+                                        android:text="—"
+                                        android:textColor="@color/text"
+                                        android:textSize="26sp"
+                                        android:textStyle="bold" />
+                                </LinearLayout>
+
+                                <LinearLayout
+                                    style="@style/Card"
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginLeft="12dp"
+                                    android:layout_weight="1"
+                                    android:paddingLeft="16dp"
+                                    android:paddingTop="12dp"
+                                    android:paddingRight="16dp"
+                                    android:paddingBottom="12dp">
+
+                                    <TextView
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:text="网络 累计流量"
+                                        android:textColor="@color/text3"
+                                        android:textSize="14sp" />
+
+                                    <TextView
+                                        android:id="@+id/sum_net"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:layout_marginTop="4dp"
+                                        android:text="—"
+                                        android:textColor="@color/text"
+                                        android:textSize="26sp"
+                                        android:textStyle="bold" />
+                                </LinearLayout>
+                            </LinearLayout>
+
+                            <!-- 状态 + 刷新 -->
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="12dp"
+                                android:gravity="center_vertical"
+                                android:orientation="horizontal">
+
+                                <TextView
+                                    android:id="@+id/tv_perf_status"
+                                    style="@style/T3"
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:text="点「刷新」开始采集" />
+
+                                <TextView
+                                    android:id="@+id/btn_perf_refresh"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:background="@drawable/btn_ghost"
+                                    android:paddingLeft="20dp"
+                                    android:paddingTop="7dp"
+                                    android:paddingRight="20dp"
+                                    android:paddingBottom="7dp"
+                                    android:text="刷新"
+                                    android:textColor="@color/accent"
+                                    android:textSize="14sp" />
+                            </LinearLayout>
+
+                            <!-- 表头（点击排序） -->
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="14dp"
+                                android:background="@drawable/table_header_bg"
+                                android:gravity="center_vertical"
+                                android:orientation="horizontal"
+                                android:paddingLeft="10dp"
+                                android:paddingTop="9dp"
+                                android:paddingRight="10dp"
+                                android:paddingBottom="9dp">
+
+                                <TextView
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:text="应用 / 进程"
+                                    android:textColor="@color/text2"
+                                    android:textSize="16sp" />
+
+                                <TextView
+                                    android:id="@+id/hdr_cpu"
+                                    android:layout_width="0dp"
+                                    android:layout_weight="0.25"
+                                    android:layout_height="wrap_content"
+                                    android:gravity="right"
+                                    android:text="CPU"
+                                    android:textColor="@color/accent"
+                                    android:textSize="16sp"
+                                    android:textStyle="bold" />
+
+                                <TextView
+                                    android:id="@+id/hdr_mem"
+                                    android:layout_width="0dp"
+                                    android:layout_weight="0.25"
+                                    android:layout_height="wrap_content"
+                                    android:gravity="right"
+                                    android:text="内存"
+                                    android:textColor="@color/text2"
+                                    android:textSize="16sp"
+                                    android:textStyle="bold" />
+
+                                <TextView
+                                    android:id="@+id/hdr_disk"
+                                    android:layout_width="0dp"
+                                    android:layout_weight="0.25"
+                                    android:layout_height="wrap_content"
+                                    android:gravity="right"
+                                    android:text="磁盘"
+                                    android:textColor="@color/text2"
+                                    android:textSize="16sp"
+                                    android:textStyle="bold" />
+
+                                <TextView
+                                    android:id="@+id/hdr_net"
+                                    android:layout_width="0dp"
+                                    android:layout_weight="0.25"
+                                    android:layout_height="wrap_content"
+                                    android:gravity="right"
+                                    android:text="网络"
+                                    android:textColor="@color/text2"
+                                    android:textSize="16sp"
+                                    android:textStyle="bold" />
+                            </LinearLayout>
+
+                            <!-- 数据行（动态填充） -->
+                            <LinearLayout
+                                android:id="@+id/list_perf"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="vertical" />
+
+                            <View
+                                android:layout_width="1dp"
+                                android:layout_height="0dp"
+                                android:layout_weight="1" />
+                        </LinearLayout>
+                    </ScrollView>
 
                     <!-- 关于 -->
                     <ScrollView
@@ -938,7 +1214,7 @@
                                     style="@style/T1"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:text="高级设置 v1.6"
+                                    android:text="高级设置 v1.7"
                                     android:textSize="24sp" />
 
                                 <TextView

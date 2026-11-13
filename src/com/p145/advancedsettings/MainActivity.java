@@ -9,17 +9,22 @@ import android.content.DialogInterface;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.graphics.drawable.Drawable;
 import android.view.View;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.p145.advancedsettings.core.HookManager;
+import com.p145.advancedsettings.core.PerfMonitor;
 import com.p145.advancedsettings.core.Prefs;
 import com.p145.advancedsettings.core.Root;
 import com.p145.advancedsettings.core.Targets;
 import com.p145.advancedsettings.ui.PillSwitch;
 
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -31,8 +36,8 @@ public class MainActivity extends Activity {
     private static final int[] INTERVALS = {3, 5, 10, 15, 30};
     private static final String K_PAGE = "last_page";
 
-    private static final String[] PAGES = {"overview", "voice", "volume", "about"};
-    private static final String[] TITLES = {"概览", "语音", "媒体", "关于"};
+    private static final String[] PAGES = {"overview", "voice", "volume", "perf", "about"};
+    private static final String[] TITLES = {"概览", "语音", "媒体", "性能", "关于"};
 
     private final Handler ui = new Handler(Looper.getMainLooper());
     private final ExecutorService pool = Executors.newSingleThreadExecutor();
@@ -46,6 +51,21 @@ public class MainActivity extends Activity {
     private TextView tvGuardState, tvInterval, tvBc, tvFooter, tvSection;
     private TextView tvSumIcc, tvSumVol, tvAbout, tvLogTail;
     private PillSwitch swIcc, swVol, swGuard;
+
+    // ---- 性能页 ----
+    private LinearLayout listPerf;
+    private TextView tvPerfStatus;
+    private PerfMonitor.Snapshot perfSnap;
+    private PerfMonitor.Dim perfDim = PerfMonitor.Dim.CPU;
+    private boolean perfDesc = true;
+    private boolean perfBusy;
+    private boolean perfLoaded;
+    private final Map<PerfMonitor.Dim, View> dimViews = new LinkedHashMap<>();
+    private TextView sumCpu, sumMem, sumDisk, sumNet;
+    private final Map<PerfMonitor.Dim, TextView> hdrViews = new LinkedHashMap<>();
+    private final Map<String, String> labelCache = new HashMap<>();
+    private final Map<String, Drawable> iconCache = new HashMap<>();
+    private final Map<PerfMonitor.Dim, TextView> dimSubs = new LinkedHashMap<>();
 
     private volatile boolean busy;
     private boolean binding;
@@ -66,6 +86,7 @@ public class MainActivity extends Activity {
         setContentView(R.layout.activity_main);
         bindViews();
         wireNav();
+        wirePerf();
         wire();
         applyPrefs();
         tvBc.setText(bcText());
@@ -113,11 +134,13 @@ public class MainActivity extends Activity {
         navs.put("overview", findViewById(R.id.nav_overview));
         navs.put("voice", findViewById(R.id.nav_voice));
         navs.put("volume", findViewById(R.id.nav_volume));
+        navs.put("perf", findViewById(R.id.nav_perf));
         navs.put("about", findViewById(R.id.nav_about));
 
         pages.put("overview", findViewById(R.id.page_overview));
         pages.put("voice", findViewById(R.id.page_voice));
         pages.put("volume", findViewById(R.id.page_volume));
+        pages.put("perf", findViewById(R.id.page_perf));
         pages.put("about", findViewById(R.id.page_about));
 
         for (final String key : PAGES) {
@@ -173,6 +196,14 @@ public class MainActivity extends Activity {
         for (int i = 0; i < PAGES.length; i++) {
             if (PAGES[i].equals(key)) {
                 tvSection.setText(TITLES[i]);
+            }
+        }
+        if ("perf".equals(key)) {
+            if (!perfLoaded) {
+                perfLoaded = true;
+                loadPerf();
+            } else {
+                renderPerf();
             }
         }
         if (remember) {
@@ -310,6 +341,231 @@ public class MainActivity extends Activity {
     }
 
     /** 标题下方的「展开详情」折叠区 */
+    // ------------------------------------------------------------ 性能页
+
+    private void wirePerf() {
+        listPerf = findViewById(R.id.list_perf);
+        tvPerfStatus = findViewById(R.id.tv_perf_status);
+        sumCpu = findViewById(R.id.sum_cpu);
+        sumMem = findViewById(R.id.sum_mem);
+        sumDisk = findViewById(R.id.sum_disk);
+        sumNet = findViewById(R.id.sum_net);
+
+        hdrViews.put(PerfMonitor.Dim.CPU, findViewById(R.id.hdr_cpu));
+        hdrViews.put(PerfMonitor.Dim.MEM, findViewById(R.id.hdr_mem));
+        hdrViews.put(PerfMonitor.Dim.DISK, findViewById(R.id.hdr_disk));
+        hdrViews.put(PerfMonitor.Dim.NET, findViewById(R.id.hdr_net));
+
+        for (final PerfMonitor.Dim d : PerfMonitor.Dim.values()) {
+            TextView h = hdrViews.get(d);
+            if (h == null) {
+                continue;
+            }
+            h.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    if (perfDim == d) {
+                        perfDesc = !perfDesc;
+                    } else {
+                        perfDim = d;
+                        perfDesc = true;
+                    }
+                    renderPerf();
+                }
+            });
+        }
+
+        findViewById(R.id.btn_perf_refresh).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                loadPerf();
+            }
+        });
+
+        renderPerf();
+    }
+
+    private void loadPerf() {
+        if (perfBusy) {
+            return;
+        }
+        perfBusy = true;
+        if (tvPerfStatus != null) {
+            tvPerfStatus.setText("采集中…（约 3~5 秒）");
+        }
+        pool.execute(new Runnable() {
+            @Override
+            public void run() {
+                final PerfMonitor.Snapshot s = PerfMonitor.collect(MainActivity.this);
+                ui.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        perfBusy = false;
+                        perfSnap = s;
+                        renderPerf();
+                    }
+                });
+            }
+        });
+    }
+
+    private void renderPerf() {
+        // 表头：当前排序列高亮 + 箭头
+        for (PerfMonitor.Dim d : PerfMonitor.Dim.values()) {
+            TextView h = hdrViews.get(d);
+            if (h == null) {
+                continue;
+            }
+            boolean sel = (d == perfDim);
+            String arrow = sel ? (perfDesc ? " ↓" : " ↑") : "";
+            h.setText(d.label + arrow);
+            h.setTextColor(color(sel ? R.color.accent : R.color.text2));
+        }
+
+        if (listPerf == null) {
+            return;
+        }
+        listPerf.removeAllViews();
+
+        if (perfSnap == null) {
+            if (tvPerfStatus != null) {
+                tvPerfStatus.setText(perfBusy ? "采集中…" : "点「刷新」开始采集");
+            }
+            return;
+        }
+        if (perfSnap.error != null && !perfSnap.error.isEmpty()) {
+            tvPerfStatus.setText("采集失败：" + perfSnap.error);
+            return;
+        }
+
+        // 汇总
+        sumCpu.setText(String.format("%.0f%%", perfSnap.total(PerfMonitor.Dim.CPU) / Math.max(1, perfSnap.ncpu)));
+        sumMem.setText(mbText(perfSnap.total(PerfMonitor.Dim.MEM)));
+        sumDisk.setText(mbText(perfSnap.total(PerfMonitor.Dim.DISK)));
+        sumNet.setText(mbText(perfSnap.total(PerfMonitor.Dim.NET)));
+
+        List<PerfMonitor.AppUsage> list = perfSnap.sorted(perfDim, perfDesc);
+        int limit = Math.min(24, list.size());
+        for (int i = 0; i < limit; i++) {
+            listPerf.addView(createPerfRow(i + 1, list.get(i)));
+        }
+
+        java.text.SimpleDateFormat f = new java.text.SimpleDateFormat("HH:mm:ss", java.util.Locale.US);
+        tvPerfStatus.setText(String.format("%d 个进程 · %s · 点表头换排序",
+                perfSnap.processCount, f.format(new java.util.Date(perfSnap.at))));
+    }
+
+    private String mbText(double mb) {
+        if (mb >= 1024) {
+            return String.format("%.2f GB", mb / 1024);
+        }
+        return String.format("%.0f MB", mb);
+    }
+
+    /** 表格行：图标 + 应用名 + CPU / 内存 / 磁盘 / 网络 四列 */
+    private View createPerfRow(int rank, PerfMonitor.AppUsage u) {
+        LinearLayout wrap = new LinearLayout(this);
+        wrap.setOrientation(LinearLayout.VERTICAL);
+
+        LinearLayout row = new LinearLayout(this);
+        row.setOrientation(LinearLayout.HORIZONTAL);
+        row.setGravity(android.view.Gravity.CENTER_VERTICAL);
+        row.setPadding(dp(12), dp(14), dp(12), dp(14));
+
+        // 图标
+        ImageView icon = new ImageView(this);
+        LinearLayout.LayoutParams ip = new LinearLayout.LayoutParams(dp(40), dp(40));
+        Drawable d = appIcon(u.name);
+        if (d != null) {
+            icon.setImageDrawable(d);
+        } else {
+            icon.setImageResource(R.drawable.ic_launcher);
+            icon.setAlpha(0.55f);
+        }
+        row.addView(icon, ip);
+
+        // 应用名（失败则退回进程名）
+        TextView tvName = new TextView(this);
+        String label = appLabel(u.name);
+        tvName.setText(label != null ? label : u.name);
+        tvName.setTextSize(18);
+        tvName.setTextColor(color(R.color.text));
+        tvName.setSingleLine(true);
+        tvName.setEllipsize(android.text.TextUtils.TruncateAt.END);
+        LinearLayout.LayoutParams np = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
+        np.leftMargin = dp(10);
+        row.addView(tvName, np);
+
+        row.addView(cell(u.display(PerfMonitor.Dim.CPU), perfDim == PerfMonitor.Dim.CPU));
+        row.addView(cell(u.display(PerfMonitor.Dim.MEM), perfDim == PerfMonitor.Dim.MEM));
+        row.addView(cell(u.display(PerfMonitor.Dim.DISK), perfDim == PerfMonitor.Dim.DISK));
+        row.addView(cell(u.display(PerfMonitor.Dim.NET), perfDim == PerfMonitor.Dim.NET));
+
+        wrap.addView(row);
+
+        View div = new View(this);
+        div.setBackgroundColor(0x14FFFFFF);
+        LinearLayout.LayoutParams dp2 = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 1);
+        wrap.addView(div, dp2);
+        return wrap;
+    }
+
+    private TextView cell(String text, boolean highlight) {
+        TextView tv = new TextView(this);
+        tv.setText(text);
+        tv.setTextSize(13);
+        tv.setTextColor(color(highlight ? R.color.accent : R.color.text2));
+        tv.setGravity(android.view.Gravity.RIGHT);
+        tv.setSingleLine(true);
+        tv.setPadding(dp(4), 0, 0, 0);
+        tv.setLayoutParams(new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 0.25f));
+        return tv;
+    }
+
+    /** 包名 → 应用名（带缓存） */
+    private String appLabel(String pkg) {
+        if (pkg == null || pkg.isEmpty()) {
+            return null;
+        }
+        if (labelCache.containsKey(pkg)) {
+            return labelCache.get(pkg);
+        }
+        String label = null;
+        try {
+            android.content.pm.ApplicationInfo ai = getPackageManager().getApplicationInfo(pkg, 0);
+            CharSequence cs = getPackageManager().getApplicationLabel(ai);
+            if (cs != null && cs.length() > 0) {
+                label = cs.toString();
+            }
+        } catch (Exception ignored) {
+        }
+        labelCache.put(pkg, label);
+        return label;
+    }
+
+    /** 包名 → 图标（带缓存） */
+    private Drawable appIcon(String pkg) {
+        if (pkg == null || pkg.isEmpty()) {
+            return null;
+        }
+        if (iconCache.containsKey(pkg)) {
+            return iconCache.get(pkg);
+        }
+        Drawable d = null;
+        try {
+            android.content.pm.ApplicationInfo ai = getPackageManager().getApplicationInfo(pkg, 0);
+            d = getPackageManager().getApplicationIcon(ai);
+        } catch (Exception ignored) {
+        }
+        iconCache.put(pkg, d);
+        return d;
+    }
+
+    private int dp(int v) {
+        return (int) (v * getResources().getDisplayMetrics().density + 0.5f);
+    }
+
+
     private void wireDetail(final int toggleId, final int detailId, final String key) {
         final TextView toggle = findViewById(toggleId);
         final View detail = findViewById(detailId);
@@ -344,7 +600,7 @@ public class MainActivity extends Activity {
 
     private String aboutText() {
         return "包名　com.p145.advancedsettings\n"
-                + "版本　1.6 (versionCode 7)\n"
+                + "版本　1.7 (versionCode 8)\n"
                 + "签名　平台公签 platform.pk8 / x509.pem\n"
                 + "通道　127.0.0.1:5555（adbd root）\n"
                 + "运行时　frida-inject 16.7.19\n"
@@ -483,7 +739,7 @@ public class MainActivity extends Activity {
                 + Prefs.getInt(this, Prefs.K_INTERVAL, HookManager.DEFAULT_INTERVAL) + " 秒巡检"
                 : "守护已关闭或未启动");
 
-        tvFooter.setText(running ? "v1.6 · 守护运行中" : "v1.6 · 守护已停止");
+        tvFooter.setText(running ? "v1.7 · 守护运行中" : "v1.7 · 守护已停止");
 
         List<String> logs = HookManager.getLog();
         StringBuilder tail = new StringBuilder();
