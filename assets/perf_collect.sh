@@ -7,12 +7,15 @@
 #   N <uid> <netBytes>
 #   Z <total_jiffies2>
 #   J <pid> <cpuJiffies2>
+TERM=dumb
+export TERM
+
 D=/data/local/tmp
 PC=$D/.pcpu
 PP=$D/.pps
 
 get_total() {
-  awk '/^cpu /{s=0; for(i=2;i<=NF;i++) s+=$i; print s}' /proc/stat
+  awk '/^cpu /{s=0; for(i=2;i<=NF;i++) s+=$i; print s, $5+$6}' /proc/stat
 }
 
 NCPU=$(grep -c '^processor' /proc/cpuinfo 2>/dev/null)
@@ -21,6 +24,7 @@ NCPU=$(grep -c '^processor' /proc/cpuinfo 2>/dev/null)
 awk '{sub(/^[^)]*\) /,""); split(FILENAME,a,"/"); print a[3], $12+$13, $22}' /proc/[0-9]*/stat 2>/dev/null > $PC
 ps -A -o PID,USER,ARGS 2>/dev/null > $PP
 
+echo "M $(awk '/^MemTotal:/{t=$2} /^MemAvailable:/{a=$2} END{print t, a}' /proc/meminfo)"
 echo "T $(get_total) $NCPU"
 
 AL=$(awk '

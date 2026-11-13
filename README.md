@@ -250,8 +250,8 @@ shell.exec("am start-foreground-service -n com.p145.advancedsettings/.GuardServi
 
 | 汇总卡 | 口径 |
 |---|---|
-| CPU 总占用 | 所有进程 CPU% 之和 ÷ 核数 |
-| 内存 合计 | 所有进程 RSS 之和 |
+| 整机 CPU 使用率 | 直接读 `/proc/stat`：`(Δtotal - Δidle - Δiowait) / Δtotal`，与系统状态栏 / EVCC 同口径 |
+| 内存 已用 / 总量 | `/proc/meminfo`：`MemTotal` 与 `MemTotal - MemAvailable` |
 | 磁盘 累计 I/O | `/proc/<pid>/io` 的 `read_bytes + write_bytes` |
 | 网络 累计流量 | `/proc/net/xt_qtaguid/stats` 按 uid 汇总（已去重） |
 
@@ -263,11 +263,14 @@ shell.exec("am start-foreground-service -n com.p145.advancedsettings/.GuardServi
 
 **口径说明**：
 
+- 列表里的 CPU 是**占整机**百分比（8 核合计 100%），所以各进程加起来会**远小于**顶部整机值 ——
+  差额是内核线程、中断、iowait 这些没归到用户进程的 CPU；
 - 磁盘 / 网络是**累计值**不是速率，只增不减；
 - 网络按 uid 统计，同一 uid 下的多个进程会显示同一个值；
 - 内存用 RSS 累加，共享库被重复计算，合计会大于物理内存；
 - 应用列约占一半宽度，其余四列等分；字号按车机屏放大（名称 18sp / 数值 17sp / 表头 16sp），一屏约 8 行；
-- 显示前 24 个进程（可滚动），点「刷新」重新采集（约 3~5 秒）。
+- 收集按钮是自动刷新档位开关：**自动 1 秒 → 2 秒 → 3 秒 → 关闭** 循环，默认 1 秒；
+- 显示前 24 个进程（可滚动）。
 
 ### 调试时防息屏
 

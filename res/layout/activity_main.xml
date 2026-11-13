@@ -978,7 +978,7 @@
                                     <TextView
                                         android:layout_width="wrap_content"
                                         android:layout_height="wrap_content"
-                                        android:text="CPU 总占用"
+                                        android:text="整机 CPU 使用率"
                                         android:textColor="@color/text3"
                                         android:textSize="14sp" />
 
@@ -1007,7 +1007,7 @@
                                     <TextView
                                         android:layout_width="wrap_content"
                                         android:layout_height="wrap_content"
-                                        android:text="内存 合计"
+                                        android:text="内存 已用 / 总量"
                                         android:textColor="@color/text3"
                                         android:textSize="14sp" />
 
@@ -1106,7 +1106,7 @@
                                     android:paddingTop="7dp"
                                     android:paddingRight="20dp"
                                     android:paddingBottom="7dp"
-                                    android:text="刷新"
+                                    android:text="自动 1 秒"
                                     android:textColor="@color/accent"
                                     android:textSize="14sp" />
                             </LinearLayout>

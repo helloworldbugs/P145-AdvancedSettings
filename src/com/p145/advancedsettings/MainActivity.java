@@ -61,6 +61,22 @@ public class MainActivity extends Activity {
     private boolean perfBusy;
     private boolean perfLoaded;
     private final Map<PerfMonitor.Dim, View> dimViews = new LinkedHashMap<>();
+    private static final int[] PERF_SECS = {1, 2, 3, 0};   // 0 = 关闭
+    private int perfAutoIdx = 0;                            // 默认 1 秒
+    private TextView btnPerfAuto;
+
+    private final Runnable perfTick = new Runnable() {
+        @Override
+        public void run() {
+            int sec = PERF_SECS[perfAutoIdx];
+            if (sec <= 0 || !"perf".equals(current)) {
+                return;
+            }
+            loadPerf();
+            ui.postDelayed(this, sec * 1000L);
+        }
+    };
+
     private TextView sumCpu, sumMem, sumDisk, sumNet;
     private final Map<PerfMonitor.Dim, TextView> hdrViews = new LinkedHashMap<>();
     private final Map<String, String> labelCache = new HashMap<>();
@@ -198,12 +214,16 @@ public class MainActivity extends Activity {
                 tvSection.setText(TITLES[i]);
             }
         }
+        ui.removeCallbacks(perfTick);
         if ("perf".equals(key)) {
             if (!perfLoaded) {
                 perfLoaded = true;
                 loadPerf();
             } else {
                 renderPerf();
+            }
+            if (PERF_SECS[perfAutoIdx] > 0) {
+                ui.postDelayed(perfTick, PERF_SECS[perfAutoIdx] * 1000L);
             }
         }
         if (remember) {
@@ -385,14 +405,25 @@ public class MainActivity extends Activity {
         renderPerf();
     }
 
+    private void updatePerfAutoBtn() {
+        if (btnPerfAuto == null) {
+            return;
+        }
+        int sec = PERF_SECS[perfAutoIdx];
+        if (sec > 0) {
+            btnPerfAuto.setText("自动 " + sec + " 秒");
+            btnPerfAuto.setTextColor(color(R.color.accent));
+        } else {
+            btnPerfAuto.setText("已关闭");
+            btnPerfAuto.setTextColor(color(R.color.text3));
+        }
+    }
+
     private void loadPerf() {
         if (perfBusy) {
             return;
         }
         perfBusy = true;
-        if (tvPerfStatus != null) {
-            tvPerfStatus.setText("采集中…（约 3~5 秒）");
-        }
         pool.execute(new Runnable() {
             @Override
             public void run() {
@@ -439,8 +470,8 @@ public class MainActivity extends Activity {
         }
 
         // 汇总
-        sumCpu.setText(String.format("%.0f%%", perfSnap.total(PerfMonitor.Dim.CPU) / Math.max(1, perfSnap.ncpu)));
-        sumMem.setText(mbText(perfSnap.total(PerfMonitor.Dim.MEM)));
+        sumCpu.setText(String.format("%.0f%%", perfSnap.machineCpu));
+        sumMem.setText(String.format("%.2f / %.1f GB", perfSnap.memUsedMb / 1024, perfSnap.memTotalMb / 1024));
         sumDisk.setText(mbText(perfSnap.total(PerfMonitor.Dim.DISK)));
         sumNet.setText(mbText(perfSnap.total(PerfMonitor.Dim.NET)));
 

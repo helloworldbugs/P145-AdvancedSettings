@@ -30,7 +30,7 @@ public final class PerfMonitor {
 
     public static final String TAG = "P145ADV";
     public static final String SCRIPT = "perf_collect.sh";
-    private static final int SCRIPT_VER = 1;
+    private static final int SCRIPT_VER = 4;   // 4: TERM=dumb 去 ANSI
 
     /** 四个排行维度 */
     public enum Dim {
@@ -47,7 +47,7 @@ public final class PerfMonitor {
         public int pid;
         public int uid = -1;
         public String name = "";
-        public double cpu;      // %
+        public double cpu;      // 占整机 CPU 的百分比（所有核合计 = 100%）
         public double memMb;    // MB
         public double diskMb;   // MB（累计读写）
         public double netMb;    // MB（累计收发）
@@ -83,6 +83,11 @@ public final class PerfMonitor {
         public long at;
         public int processCount;
         public int ncpu = 4;
+        /** 整机 CPU 使用率（与系统状态栏 / EVCC 同口径） */
+        public double machineCpu;
+        /** 物理内存总量 / 已用（MB） */
+        public double memTotalMb;
+        public double memUsedMb;
         public final List<AppUsage> apps = new ArrayList<>();
         public String error = "";
 
@@ -188,7 +193,7 @@ public final class PerfMonitor {
             snap.error = "无输出";
             return;
         }
-        long total1 = 0, total2 = 0;
+        long total1 = 0, total2 = 0, idle1 = 0, idle2 = 0;
         Map<Integer, AppUsage> map = new HashMap<>();
         Map<Integer, Long> j2 = new HashMap<>();
         Map<Integer, Long> uidNet = new HashMap<>();
@@ -199,10 +204,17 @@ public final class PerfMonitor {
                 continue;
             }
             try {
-                if (line.startsWith("T ")) {
+                if (line.startsWith("M ")) {
+                    String[] p = line.split("\\s+");
+                    double totalKb = Long.parseLong(p[1]);
+                    double availKb = Long.parseLong(p[2]);
+                    snap.memTotalMb = totalKb / 1024.0;
+                    snap.memUsedMb = (totalKb - availKb) / 1024.0;
+                } else if (line.startsWith("T ")) {
                     String[] p = line.split("\\s+");
                     total1 = Long.parseLong(p[1]);
-                    snap.ncpu = Integer.parseInt(p[2]);
+                    idle1 = Long.parseLong(p[2]);
+                    snap.ncpu = Integer.parseInt(p[3]);
                 } else if (line.startsWith("A ")) {
                     // A pid user jiffies rss name...
                     String[] p = line.split("\\s+", 6);
@@ -225,6 +237,7 @@ public final class PerfMonitor {
                 } else if (line.startsWith("Z ")) {
                     String[] p = line.split("\\s+");
                     total2 = Long.parseLong(p[1]);
+                    idle2 = Long.parseLong(p[2]);
                 } else if (line.startsWith("J ")) {
                     String[] p = line.split("\\s+");
                     j2.put(Integer.parseInt(p[1]), Long.parseLong(p[2]));
@@ -234,9 +247,15 @@ public final class PerfMonitor {
         }
 
         long dTotal = total2 - total1;
+        long dIdle = idle2 - idle1;
         if (dTotal <= 0) {
             dTotal = 1;
         }
+        if (dIdle < 0) {
+            dIdle = 0;
+        }
+        // 整机使用率 = (总时间 - 空闲时间) / 总时间；口径与 top / 状态栏一致
+        snap.machineCpu = (dTotal - dIdle) * 100.0 / dTotal;
         for (AppUsage u : map.values()) {
             Long v2 = j2.get(u.pid);
             double j1 = u.cpu;   // 前面暂存的 jiffies1
@@ -245,7 +264,8 @@ public final class PerfMonitor {
                 if (dj < 0) {
                     dj = 0;
                 }
-                u.cpu = dj / (double) dTotal * snap.ncpu * 100.0;
+                // 占「整机」百分比：所有核的时间之和为 100%，单进程最多 100%
+                u.cpu = dj / (double) dTotal * 100.0;
             } else {
                 u.cpu = 0;
             }
