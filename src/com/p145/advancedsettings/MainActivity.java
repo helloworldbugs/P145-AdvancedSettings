@@ -60,6 +60,7 @@ public class MainActivity extends Activity {
     private boolean perfDesc = true;
     private boolean perfBusy;
     private boolean perfLoaded;
+    private int perfCollectN;      // 每 3 次采集带一次 PSS
     private final Map<PerfMonitor.Dim, View> dimViews = new LinkedHashMap<>();
     private static final int[] PERF_SECS = {1, 2, 3, 0};   // 0 = 关闭
     private int perfAutoIdx = 0;                            // 默认 1 秒
@@ -424,10 +425,11 @@ public class MainActivity extends Activity {
             return;
         }
         perfBusy = true;
+        final boolean withPss = (perfCollectN++ % 3) == 0;   // 第 1/4/7… 次带 PSS，其余沿用缓存
         pool.execute(new Runnable() {
             @Override
             public void run() {
-                final PerfMonitor.Snapshot s = PerfMonitor.collect(MainActivity.this);
+                final PerfMonitor.Snapshot s = PerfMonitor.collect(MainActivity.this, withPss);
                 ui.post(new Runnable() {
                     @Override
                     public void run() {

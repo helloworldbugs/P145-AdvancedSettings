@@ -9,6 +9,7 @@
 #   J <pid> <cpuJiffies2>
 TERM=dumb
 export TERM
+WITH_PSS="$1"
 
 D=/data/local/tmp
 PC=$D/.pcpu
@@ -83,3 +84,11 @@ awk '
 rm -f $D/.pids
 
 rm -f $PC $PP
+
+
+if [ "$WITH_PSS" = "pss" ]; then
+  for p in $(echo "$AL" | awk '{print $2}'); do
+    v=$(awk '/^Pss:/{s+=$2} END{printf "%d", s+0}' /proc/$p/smaps 2>/dev/null)
+    echo "P $p ${v:-0}"
+  done
+fi

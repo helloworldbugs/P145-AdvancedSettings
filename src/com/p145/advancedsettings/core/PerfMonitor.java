@@ -30,7 +30,7 @@ public final class PerfMonitor {
 
     public static final String TAG = "P145ADV";
     public static final String SCRIPT = "perf_collect.sh";
-    private static final int SCRIPT_VER = 6;   // 5: 修 /proc/<pid>/stat 的 pid 取值（原来取到 "stat"）
+    private static final int SCRIPT_VER = 8;   // 7: 可选的 PSS 采集   // 5: 修 /proc/<pid>/stat 的 pid 取值（原来取到 "stat"）
 
     /** 四个排行维度 */
     public enum Dim {
@@ -128,6 +128,9 @@ public final class PerfMonitor {
         }
     }
 
+    /** 进程名 → PSS(MB)：内存变化慢，每 N 次采集刷新一次，中间沿用缓存 */
+    private static final Map<String, Double> PSS_CACHE = new HashMap<>();
+
     private PerfMonitor() {
     }
 
@@ -165,7 +168,7 @@ public final class PerfMonitor {
 
     // ------------------------------------------------------------ 采集
 
-    public static Snapshot collect(Context ctx) {
+    public static Snapshot collect(Context ctx, boolean withPss) {
         Snapshot snap = new Snapshot();
         snap.at = System.currentTimeMillis();
         if (!deploy(ctx)) {
@@ -174,7 +177,7 @@ public final class PerfMonitor {
         }
         String out;
         try {
-            Root.R r = Root.sh("sh " + HookManager.WORK + "/" + SCRIPT, 30000);
+            Root.R r = Root.sh("sh " + HookManager.WORK + "/" + SCRIPT + (withPss ? " pss" : ""), 40000);
             out = r.out;
         } catch (Exception e) {
             snap.error = "执行采集脚本失败: " + e.getMessage();
@@ -183,12 +186,12 @@ public final class PerfMonitor {
         if (out != null) {
             HookManager.log("性能采集: " + out.length() + " 字符 / " + out.split("\n").length + " 行");
         }
-        parse(out, snap);
+        parse(out, snap, withPss);
         HookManager.log("性能采集: 解析到 " + snap.apps.size() + " 个进程" + (snap.error.isEmpty() ? "" : " (" + snap.error + ")"));
         return snap;
     }
 
-    private static void parse(String out, Snapshot snap) {
+    private static void parse(String out, Snapshot snap, boolean withPss) {
         if (out == null) {
             snap.error = "无输出";
             return;
@@ -197,6 +200,7 @@ public final class PerfMonitor {
         Map<Integer, AppUsage> map = new HashMap<>();
         Map<Integer, Long> j2 = new HashMap<>();
         Map<Integer, Long> uidNet = new HashMap<>();
+        Map<Integer, Double> pssByPid = new HashMap<>();
 
         for (String raw : out.split("\n")) {
             String line = raw.trim();
@@ -238,6 +242,11 @@ public final class PerfMonitor {
                     String[] p = line.split("\\s+");
                     total2 = Long.parseLong(p[1]);
                     idle2 = Long.parseLong(p[2]);
+                } else if (line.startsWith("P ")) {
+                    String[] p = line.split("\\s+");
+                    if (p.length >= 3) {
+                        pssByPid.put(Integer.parseInt(p[1]), Long.parseLong(p[2]) / 1024.0);
+                    }
                 } else if (line.startsWith("J ")) {
                     String[] p = line.split("\\s+");
                     j2.put(Integer.parseInt(p[1]), Long.parseLong(p[2]));
@@ -273,6 +282,17 @@ public final class PerfMonitor {
                 Long net = uidNet.get(u.uid);
                 if (net != null) {
                     u.netMb = net / 1048576.0;
+                }
+            }
+            // 内存：优先本轮的 PSS，其次缓存里的 PSS，最后才是 RSS
+            Double fresh = pssByPid.get(u.pid);
+            if (fresh != null && fresh > 0) {
+                u.memMb = fresh;
+                PSS_CACHE.put(u.name, fresh);
+            } else {
+                Double cached = PSS_CACHE.get(u.name);
+                if (cached != null && cached > 0) {
+                    u.memMb = cached;
                 }
             }
             u.name = simplifyName(u.name);
