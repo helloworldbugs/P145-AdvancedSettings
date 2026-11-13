@@ -79,6 +79,8 @@ P145-AdvancedSettings/
 ├── docs/
 │   ├── screenshots/          界面截图
 │   └── P145车机改造记录.md   改造全过程技术记录（踩坑、失败方案、日志证据）
+├── tools/
+│   └── keep-awake.ps1        调试保活（防息屏 / 深睡巡检）
 ├── reference/                ⚠️ 历史资料（反编译产物/工具链，约 900 MB）
 │   ├── README.md             各子目录说明
 │   ├── tools/                jadx / apktool / uber-apk-signer
@@ -241,6 +243,33 @@ shell.exec("am start-foreground-service -n com.p145.advancedsettings/.GuardServi
 
 > 反过来：如果你更喜欢"一条命令启动全部"，用 `am broadcast -a com.p145.adv.INJECT` 也可以——
 > 它现在会先把守护拉起来（并把守护开关置开），再立刻同步注入所有已开启的功能。
+
+### 调试时防息屏（scrcpy）
+
+车机**不吃** Android 的 `screen_off_timeout`（实测设成 `0` 照样会息屏），熄灭 / 深睡由**车辆电源策略**控制：
+
+- **着车 / ACC ON**：普通息屏，`svc power stayon true` 就能顶住（实测 150 秒不睡）；
+- **熄火停放**：进入 **GarageMode**（`GarageModeTimeWindow 600000 ms`，10 分钟窗口），窗口结束直接 **deep sleep**
+  —— 实测停一晚，`mLastSleepTime` 到 `mLastWakeTime` 相隔 8 小时，logcat 整个断档。
+
+三种做法，按需选：
+
+```powershell
+# ① 最轻：scrcpy 自带参数（等价于 svc power stayon true）
+D:\ARM\Android\scrcpy-win64-v5.0.1\scrcpy.exe -s 10.0.0.1:5555 --stay-awake
+
+# ② 手动设一次
+adb -s 10.0.0.1:5555 shell "svc power stayon true"
+
+# ③ 长期停放调试：stayon + root 内核 wake_lock（挡住 suspend）
+tools\keep-awake.ps1 -WakeLock
+
+# 收工还原
+tools\keep-awake.ps1 -Restore
+```
+
+> `tools\keep-awake.ps1` 会每 60 秒巡检一次，发现已 Asleep 就 `keyevent WAKEUP`、stayon 掉了就重设，
+> `-WakeLock` 额外在 `/sys/power/wake_lock` 持锁。**持锁会耗车机电瓶，长时间停放记得 -Restore。**
 
 ## 六、排障
 
