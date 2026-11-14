@@ -68,6 +68,9 @@ public final class PerfMonitor {
         }
 
         public String display(Dim d) {
+            if (pid == 0 && d != Dim.DISK) {
+                return "—";      // 已安装但未运行
+            }
             switch (d) {
                 case CPU:
                     return String.format("%.1f%%", cpu);
@@ -332,6 +335,37 @@ public final class PerfMonitor {
             u.name = simplifyName(u.name);
             snap.apps.add(u);
         }
+        // 把「已安装但当前没运行」的应用也并进来（只有磁盘占用，其他维度显示 —）
+        java.util.Set<String> withProc = new java.util.HashSet<>();
+        for (AppUsage u : map.values()) {
+            String k = u.name;
+            int c = k.indexOf(':');
+            if (c > 0) {
+                k = k.substring(0, c);
+            }
+            withProc.add(k);
+        }
+        java.util.Set<String> allPkgs = new java.util.HashSet<>();
+        allPkgs.addAll(apkBytes.keySet());
+        allPkgs.addAll(dataKb.keySet());
+        for (String pkg : allPkgs) {
+            if (withProc.contains(pkg)) {
+                continue;
+            }
+            Long apk2 = apkBytes.get(pkg);
+            Long dk2 = dataKb.get(pkg);
+            double disk = (apk2 == null ? 0 : apk2) / 1048576.0 + (dk2 == null ? 0 : dk2) / 1024.0;
+            if (disk <= 0) {
+                continue;
+            }
+            AppUsage u2 = new AppUsage();
+            u2.pid = 0;
+            u2.uid = -1;
+            u2.name = pkg;
+            u2.diskMb = disk;
+            snap.apps.add(u2);
+        }
+
         snap.processCount = snap.apps.size();
         if (snap.apps.isEmpty()) {
             snap.error = "未采集到进程数据";
