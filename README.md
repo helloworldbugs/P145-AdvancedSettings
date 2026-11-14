@@ -252,7 +252,7 @@ shell.exec("am start-foreground-service -n com.p145.advancedsettings/.GuardServi
 |---|---|
 | 整机 CPU 使用率 | 直接读 `/proc/stat`：`(Δtotal - Δidle - Δiowait) / Δtotal`，与系统状态栏 / EVCC 同口径 |
 | 内存 已用 / 总量 | `/proc/meminfo`：`MemTotal` 与 `MemTotal - MemAvailable` |
-| 磁盘 累计 I/O | `/proc/<pid>/io` 的 `read_bytes + write_bytes` |
+| 磁盘 已用 / 总量 | `df -k /data` 的第 2/3 列（分区总量 / 已用） |
 | 网络 累计流量 | `/proc/net/xt_qtaguid/stats` 按 uid 汇总（已去重） |
 
 表格列：**应用/进程**（图标 + 应用名）· CPU · 内存 · 磁盘 · 网络。
@@ -265,7 +265,8 @@ shell.exec("am start-foreground-service -n com.p145.advancedsettings/.GuardServi
 
 - 列表里的 CPU 是**占整机**百分比（8 核合计 100%），所以各进程加起来会**远小于**顶部整机值 ——
   差额是内核线程、中断、iowait 这些没归到用户进程的 CPU；
-- 磁盘 / 网络是**累计值**不是速率，只增不减；
+- 列表里的磁盘是**应用占用**（APK + `/data/data/<pkg>` 数据目录），系统进程没有包名显示 `—`；
+- 网络是**累计值**不是速率，只增不减；
 - 网络按 uid 统计，同一 uid 下的多个进程会显示同一个值；
 - 列表里的内存是 **PSS**（`/proc/<pid>/smaps` 求和，与 `dumpsys meminfo` 同口径），
   每 3 次刷新算一次、中间沿用缓存 —— 内存变化慢，这样 CPU 仍能保持 1 秒实时；

@@ -30,7 +30,7 @@ public final class PerfMonitor {
 
     public static final String TAG = "P145ADV";
     public static final String SCRIPT = "perf_collect.sh";
-    private static final int SCRIPT_VER = 8;   // 7: 可选的 PSS 采集   // 5: 修 /proc/<pid>/stat 的 pid 取值（原来取到 "stat"）
+    private static final int SCRIPT_VER = 9;   // 7: 可选的 PSS 采集   // 5: 修 /proc/<pid>/stat 的 pid 取值（原来取到 "stat"）
 
     /** 四个排行维度 */
     public enum Dim {
@@ -88,6 +88,9 @@ public final class PerfMonitor {
         /** 物理内存总量 / 已用（MB） */
         public double memTotalMb;
         public double memUsedMb;
+        /** /data 分区总量 / 已用（MB） */
+        public double diskTotalMb;
+        public double diskUsedMb;
         public final List<AppUsage> apps = new ArrayList<>();
         public String error = "";
 
@@ -201,6 +204,8 @@ public final class PerfMonitor {
         Map<Integer, Long> j2 = new HashMap<>();
         Map<Integer, Long> uidNet = new HashMap<>();
         Map<Integer, Double> pssByPid = new HashMap<>();
+        Map<String, Long> apkBytes = new HashMap<>();
+        Map<String, Long> dataKb = new HashMap<>();
 
         for (String raw : out.split("\n")) {
             String line = raw.trim();
@@ -208,7 +213,17 @@ public final class PerfMonitor {
                 continue;
             }
             try {
-                if (line.startsWith("M ")) {
+                if (line.startsWith("F ")) {
+                    String[] p = line.split("\\s+");
+                    snap.diskTotalMb = Long.parseLong(p[1]) / 1024.0;
+                    snap.diskUsedMb = Long.parseLong(p[2]) / 1024.0;
+                } else if (line.startsWith("S ")) {
+                    String[] p = line.split("\\s+", 3);
+                    apkBytes.put(p[1], Long.parseLong(p[2]));
+                } else if (line.startsWith("D ")) {
+                    String[] p = line.split("\\s+", 3);
+                    dataKb.put(p[1], Long.parseLong(p[2]));
+                } else if (line.startsWith("M ")) {
                     String[] p = line.split("\\s+");
                     double totalKb = Long.parseLong(p[1]);
                     double availKb = Long.parseLong(p[2]);
@@ -229,12 +244,6 @@ public final class PerfMonitor {
                     u.name = p.length >= 6 ? p[5] : ("pid " + p[1]);
                     u.cpu = Long.parseLong(p[3]);                        // 暂存 jiffies1
                     map.put(u.pid, u);
-                } else if (line.startsWith("I ")) {
-                    String[] p = line.split("\\s+");
-                    AppUsage u = map.get(Integer.parseInt(p[1]));
-                    if (u != null) {
-                        u.diskMb = Long.parseLong(p[2]) / 1048576.0;
-                    }
                 } else if (line.startsWith("N ")) {
                     String[] p = line.split("\\s+");
                     uidNet.put(Integer.parseInt(p[1]), Long.parseLong(p[2]));
@@ -284,6 +293,19 @@ public final class PerfMonitor {
                     u.netMb = net / 1048576.0;
                 }
             }
+            String pkg = u.name;
+            int colon = pkg.indexOf(':');
+            if (colon > 0) {
+                pkg = pkg.substring(0, colon);
+            }
+            Long apk = apkBytes.get(pkg);
+            Long dk = dataKb.get(pkg);
+            if (apk != null || dk != null) {
+                u.diskMb = (apk == null ? 0 : apk) / 1048576.0 + (dk == null ? 0 : dk) / 1024.0;
+            } else {
+                u.diskMb = 0;
+            }
+
             // 内存：优先本轮的 PSS，其次缓存里的 PSS，最后才是 RSS
             Double fresh = pssByPid.get(u.pid);
             if (fresh != null && fresh > 0) {

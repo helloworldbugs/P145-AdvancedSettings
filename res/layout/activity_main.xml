@@ -1036,7 +1036,7 @@
                                     <TextView
                                         android:layout_width="wrap_content"
                                         android:layout_height="wrap_content"
-                                        android:text="磁盘 累计 I/O"
+                                        android:text="磁盘 已用 / 总量"
                                         android:textColor="@color/text3"
                                         android:textSize="14sp" />
 

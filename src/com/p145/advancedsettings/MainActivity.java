@@ -474,7 +474,7 @@ public class MainActivity extends Activity {
         // 汇总
         sumCpu.setText(String.format("%.0f%%", perfSnap.machineCpu));
         sumMem.setText(String.format("%.2f / %.1f GB", perfSnap.memUsedMb / 1024, perfSnap.memTotalMb / 1024));
-        sumDisk.setText(mbText(perfSnap.total(PerfMonitor.Dim.DISK)));
+        sumDisk.setText(String.format("%.1f / %.0f GB", perfSnap.diskUsedMb / 1024, perfSnap.diskTotalMb / 1024));
         sumNet.setText(mbText(perfSnap.total(PerfMonitor.Dim.NET)));
 
         List<PerfMonitor.AppUsage> list = perfSnap.sorted(perfDim, perfDesc);
