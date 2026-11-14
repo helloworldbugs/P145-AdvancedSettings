@@ -30,7 +30,7 @@ public final class PerfMonitor {
 
     public static final String TAG = "P145ADV";
     public static final String SCRIPT = "perf_collect.sh";
-    private static final int SCRIPT_VER = 9;   // 7: 可选的 PSS 采集   // 5: 修 /proc/<pid>/stat 的 pid 取值（原来取到 "stat"）
+    private static final int SCRIPT_VER = 10;   // 7: 可选的 PSS 采集   // 5: 修 /proc/<pid>/stat 的 pid 取值（原来取到 "stat"）
 
     /** 四个排行维度 */
     public enum Dim {
@@ -50,7 +50,9 @@ public final class PerfMonitor {
         public double cpu;      // 占整机 CPU 的百分比（所有核合计 = 100%）
         public double memMb;    // MB
         public double diskMb;   // MB（累计读写）
-        public double netMb;    // MB（累计收发）
+        public double netMb;    // 保留字段（旧累计，已不用）
+        public double upBps;    // 上行 B/s
+        public double downBps;  // 下行 B/s
 
         public double value(Dim d) {
             switch (d) {
@@ -61,7 +63,7 @@ public final class PerfMonitor {
                 case DISK:
                     return diskMb;
                 default:
-                    return netMb;
+                    return upBps + downBps;
             }
         }
 
@@ -72,9 +74,10 @@ public final class PerfMonitor {
                 case MEM:
                     return memMb >= 1024 ? String.format("%.2f GB", memMb / 1024) : String.format("%.0f MB", memMb);
                 case DISK:
+                    if (diskMb <= 0) { return "—"; }
                     return diskMb >= 1024 ? String.format("%.2f GB", diskMb / 1024) : String.format("%.1f MB", diskMb);
                 default:
-                    return netMb >= 1024 ? String.format("%.2f GB", netMb / 1024) : String.format("%.2f MB", netMb);
+                    return "↑ " + rate(upBps) + "\n↓ " + rate(downBps);
             }
         }
     }
@@ -88,6 +91,9 @@ public final class PerfMonitor {
         /** 物理内存总量 / 已用（MB） */
         public double memTotalMb;
         public double memUsedMb;
+        /** 整机网络速率（B/s） */
+        public double netUpBps;
+        public double netDownBps;
         /** /data 分区总量 / 已用（MB） */
         public double diskTotalMb;
         public double diskUsedMb;
@@ -202,7 +208,7 @@ public final class PerfMonitor {
         long total1 = 0, total2 = 0, idle1 = 0, idle2 = 0;
         Map<Integer, AppUsage> map = new HashMap<>();
         Map<Integer, Long> j2 = new HashMap<>();
-        Map<Integer, Long> uidNet = new HashMap<>();
+        Map<Integer, double[]> netBps = new HashMap<>();
         Map<Integer, Double> pssByPid = new HashMap<>();
         Map<String, Long> apkBytes = new HashMap<>();
         Map<String, Long> dataKb = new HashMap<>();
@@ -244,9 +250,14 @@ public final class PerfMonitor {
                     u.name = p.length >= 6 ? p[5] : ("pid " + p[1]);
                     u.cpu = Long.parseLong(p[3]);                        // 暂存 jiffies1
                     map.put(u.pid, u);
-                } else if (line.startsWith("N ")) {
+                } else if (line.startsWith("W ")) {
                     String[] p = line.split("\\s+");
-                    uidNet.put(Integer.parseInt(p[1]), Long.parseLong(p[2]));
+                    snap.netUpBps = Long.parseLong(p[1]);
+                    snap.netDownBps = Long.parseLong(p[2]);
+                } else if (line.startsWith("NU ")) {
+                    String[] p = line.split("\\s+");
+                    netBps.put(Integer.parseInt(p[1]),
+                            new double[]{Long.parseLong(p[2]), Long.parseLong(p[3])});
                 } else if (line.startsWith("Z ")) {
                     String[] p = line.split("\\s+");
                     total2 = Long.parseLong(p[1]);
@@ -288,9 +299,10 @@ public final class PerfMonitor {
                 u.cpu = 0;
             }
             if (u.uid >= 0) {
-                Long net = uidNet.get(u.uid);
-                if (net != null) {
-                    u.netMb = net / 1048576.0;
+                double[] nr = netBps.get(u.uid);
+                if (nr != null) {
+                    u.upBps = nr[0];
+                    u.downBps = nr[1];
                 }
             }
             String pkg = u.name;
@@ -324,6 +336,17 @@ public final class PerfMonitor {
         if (snap.apps.isEmpty()) {
             snap.error = "未采集到进程数据";
         }
+    }
+
+    /** B/s → 自适应单位 */
+    public static String rate(double bps) {
+        if (bps >= 1048576) {
+            return String.format("%.1f MB/s", bps / 1048576.0);
+        }
+        if (bps >= 1024) {
+            return String.format("%.0f KB/s", bps / 1024.0);
+        }
+        return String.format("%.0f B/s", bps);
     }
 
     private static int uidOf(String user) {

@@ -475,7 +475,7 @@ public class MainActivity extends Activity {
         sumCpu.setText(String.format("%.0f%%", perfSnap.machineCpu));
         sumMem.setText(String.format("%.2f / %.1f GB", perfSnap.memUsedMb / 1024, perfSnap.memTotalMb / 1024));
         sumDisk.setText(String.format("%.1f / %.0f GB", perfSnap.diskUsedMb / 1024, perfSnap.diskTotalMb / 1024));
-        sumNet.setText(mbText(perfSnap.total(PerfMonitor.Dim.NET)));
+        sumNet.setText("↑ " + PerfMonitor.rate(perfSnap.netUpBps) + "\n↓ " + PerfMonitor.rate(perfSnap.netDownBps));
 
         List<PerfMonitor.AppUsage> list = perfSnap.sorted(perfDim, perfDesc);
         int limit = Math.min(24, list.size());
@@ -546,10 +546,17 @@ public class MainActivity extends Activity {
     private TextView cell(String text, boolean highlight) {
         TextView tv = new TextView(this);
         tv.setText(text);
-        tv.setTextSize(13);
+        if (text.indexOf('\n') >= 0) {
+            tv.setTextSize(11);
+            tv.setLineSpacing(0, 0.85f);
+            tv.setSingleLine(false);
+            tv.setMaxLines(2);
+        } else {
+            tv.setTextSize(17);
+            tv.setSingleLine(true);
+        }
         tv.setTextColor(color(highlight ? R.color.accent : R.color.text2));
         tv.setGravity(android.view.Gravity.RIGHT);
-        tv.setSingleLine(true);
         tv.setPadding(dp(4), 0, 0, 0);
         tv.setLayoutParams(new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 0.25f));
         return tv;

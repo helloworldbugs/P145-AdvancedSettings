@@ -1065,7 +1065,7 @@
                                     <TextView
                                         android:layout_width="wrap_content"
                                         android:layout_height="wrap_content"
-                                        android:text="网络 累计流量"
+                                        android:text="网络 实时速率"
                                         android:textColor="@color/text3"
                                         android:textSize="14sp" />
 
@@ -1076,7 +1076,7 @@
                                         android:layout_marginTop="4dp"
                                         android:text="—"
                                         android:textColor="@color/text"
-                                        android:textSize="26sp"
+                                        android:textSize="16sp"
                                         android:textStyle="bold" />
                                 </LinearLayout>
                             </LinearLayout>
