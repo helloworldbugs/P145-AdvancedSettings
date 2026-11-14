@@ -219,34 +219,6 @@ public final class HookManager {
 
     // ---------------------------------------------------------------- pid
 
-    private static Map<String, Integer> readPids() {
-        Map<String, Integer> m = new HashMap<>();
-        StringBuilder sb = new StringBuilder();
-        for (Targets.T t : Targets.ALL) {
-            sb.append("echo \"@").append(t.pkg).append("=$(pidof ").append(t.pkg).append(")\"; ");
-        }
-        String out = Root.out(sb.toString(), 8000);
-        for (String line : out.split("\n")) {
-            line = line.trim();
-            if (!line.startsWith("@")) {
-                continue;
-            }
-            int eq = line.indexOf('=');
-            if (eq < 0) {
-                continue;
-            }
-            String pkg = line.substring(1, eq).trim();
-            String pids = line.substring(eq + 1).trim();
-            if (pids.isEmpty()) {
-                continue;
-            }
-            try {
-                m.put(pkg, Integer.parseInt(pids.split("\\s+")[0]));
-            } catch (Exception ignored) {
-            }
-        }
-        return m;
-    }
 
     // -------------------------------------------------------------- 注入
 
@@ -487,22 +459,5 @@ public final class HookManager {
         return s.replace("\\", "/").replace("\"", "'").replace("\n", " ").replace("\r", " ");
     }
 
-    public static List<String> targetsOf(String feature) {
-        List<String> l = new ArrayList<>();
-        for (Targets.T t : Targets.of(feature)) {
-            l.add(t.pkg);
-        }
-        Collections.sort(l);
-        return l;
-    }
 
-    /** 读 5 个音量组当前值，用于界面自检 */
-    public static String groups() {
-        try {
-            String out = Root.out("for g in 0 1 2 3 4; do printf \"g%s=%s \" $g $(settings get global android.car.VOLUME_GROUP/$g); done", 8000);
-            return out.trim();
-        } catch (Exception e) {
-            return "";
-        }
-    }
 }

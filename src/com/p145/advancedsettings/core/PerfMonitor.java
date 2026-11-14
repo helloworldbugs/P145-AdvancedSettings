@@ -50,7 +50,6 @@ public final class PerfMonitor {
         public double cpu;      // 占整机 CPU 的百分比（所有核合计 = 100%）
         public double memMb;    // MB
         public double diskMb;   // MB（累计读写）
-        public double netMb;    // 保留字段（旧累计，已不用）
         public double upBps;    // 上行 B/s
         public double downBps;  // 下行 B/s
 
@@ -120,18 +119,8 @@ public final class PerfMonitor {
             return l;
         }
 
-        /** 某个维度的合计（网络按 uid 去重，避免同一 uid 的多个进程重复累加） */
+        /** 某个维度的合计 */
         public double total(Dim d) {
-            if (d == Dim.NET) {
-                java.util.Set<Integer> seen = new java.util.HashSet<>();
-                double n = 0;
-                for (AppUsage a : apps) {
-                    if (a.uid >= 0 && seen.add(a.uid)) {
-                        n += a.netMb;
-                    }
-                }
-                return n;
-            }
             double s = 0;
             for (AppUsage a : apps) {
                 s += a.value(d);
@@ -198,12 +187,12 @@ public final class PerfMonitor {
         if (out != null) {
             HookManager.log("性能采集: " + out.length() + " 字符 / " + out.split("\n").length + " 行");
         }
-        parse(out, snap, withPss);
+        parse(out, snap);
         HookManager.log("性能采集: 解析到 " + snap.apps.size() + " 个进程" + (snap.error.isEmpty() ? "" : " (" + snap.error + ")"));
         return snap;
     }
 
-    private static void parse(String out, Snapshot snap, boolean withPss) {
+    private static void parse(String out, Snapshot snap) {
         if (out == null) {
             snap.error = "无输出";
             return;
@@ -249,7 +238,7 @@ public final class PerfMonitor {
                     AppUsage u = new AppUsage();
                     u.pid = Integer.parseInt(p[1]);
                     u.uid = uidOf(p[2]);
-                    u.memMb = Long.parseLong(p[3 + 1]) * 4.0 / 1024.0;   // rss pages → MB
+                    u.memMb = Long.parseLong(p[4]) * 4.0 / 1024.0;   // rss pages → MB
                     u.name = p.length >= 6 ? p[5] : ("pid " + p[1]);
                     u.cpu = Long.parseLong(p[3]);                        // 暂存 jiffies1
                     map.put(u.pid, u);

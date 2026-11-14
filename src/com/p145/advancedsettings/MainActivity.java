@@ -61,7 +61,6 @@ public class MainActivity extends Activity {
     private boolean perfBusy;
     private boolean perfLoaded;
     private int perfCollectN;      // 每 3 次采集带一次 PSS
-    private final Map<PerfMonitor.Dim, View> dimViews = new LinkedHashMap<>();
     private static final int[] PERF_SECS = {1, 2, 3, 0};   // 0 = 关闭
     private int perfAutoIdx = 0;                            // 默认 1 秒
     private TextView btnPerfAuto;
@@ -82,7 +81,6 @@ public class MainActivity extends Activity {
     private final Map<PerfMonitor.Dim, TextView> hdrViews = new LinkedHashMap<>();
     private final Map<String, String> labelCache = new HashMap<>();
     private final Map<String, Drawable> iconCache = new HashMap<>();
-    private final Map<PerfMonitor.Dim, TextView> dimSubs = new LinkedHashMap<>();
 
     private volatile boolean busy;
     private boolean binding;
@@ -480,23 +478,24 @@ public class MainActivity extends Activity {
         List<PerfMonitor.AppUsage> list = perfSnap.sorted(perfDim, perfDesc);
         int limit = Math.min(24, list.size());
         for (int i = 0; i < limit; i++) {
-            listPerf.addView(createPerfRow(i + 1, list.get(i)));
+            listPerf.addView(createPerfRow(list.get(i)));
         }
 
         java.text.SimpleDateFormat f = new java.text.SimpleDateFormat("HH:mm:ss", java.util.Locale.US);
-        tvPerfStatus.setText(String.format("%d 个进程 · %s · 点表头换排序",
-                perfSnap.processCount, f.format(new java.util.Date(perfSnap.at))));
-    }
-
-    private String mbText(double mb) {
-        if (mb >= 1024) {
-            return String.format("%.2f GB", mb / 1024);
+        int autoSec = PERF_SECS[perfAutoIdx];
+        String autoTxt = autoSec > 0 ? ("自动 " + autoSec + " 秒") : "手动";
+        int running = 0;
+        for (PerfMonitor.AppUsage a : perfSnap.apps) {
+            if (a.pid > 0) {
+                running++;
+            }
         }
-        return String.format("%.0f MB", mb);
-    }
+        tvPerfStatus.setText(String.format("运行 %d · 共 %d 个应用 · 更新于 %s · %s · 点表头换排序",
+                running, perfSnap.processCount, f.format(new java.util.Date(perfSnap.at)), autoTxt));
 
+    }
     /** 表格行：图标 + 应用名 + CPU / 内存 / 磁盘 / 网络 四列 */
-    private View createPerfRow(int rank, PerfMonitor.AppUsage u) {
+    private View createPerfRow(PerfMonitor.AppUsage u) {
         LinearLayout wrap = new LinearLayout(this);
         wrap.setOrientation(LinearLayout.VERTICAL);
 
@@ -505,9 +504,12 @@ public class MainActivity extends Activity {
         row.setGravity(android.view.Gravity.CENTER_VERTICAL);
         row.setPadding(dp(12), dp(14), dp(12), dp(14));
 
-        // 图标
+        // 名称区：图标 + 名字，整体 weight 1 ���- 和表头的「应用 / 进程」列同宽
+        LinearLayout nameBox = new LinearLayout(this);
+        nameBox.setOrientation(LinearLayout.HORIZONTAL);
+        nameBox.setGravity(android.view.Gravity.CENTER_VERTICAL);
+
         ImageView icon = new ImageView(this);
-        LinearLayout.LayoutParams ip = new LinearLayout.LayoutParams(dp(40), dp(40));
         Drawable d = appIcon(u.name);
         if (d != null) {
             icon.setImageDrawable(d);
@@ -515,9 +517,8 @@ public class MainActivity extends Activity {
             icon.setImageResource(R.drawable.ic_launcher);
             icon.setAlpha(0.55f);
         }
-        row.addView(icon, ip);
+        nameBox.addView(icon, new LinearLayout.LayoutParams(dp(40), dp(40)));
 
-        // 应用名（失败则退回进程名）
         TextView tvName = new TextView(this);
         String label = appLabel(u.name);
         tvName.setText(label != null ? label : u.name);
@@ -527,7 +528,9 @@ public class MainActivity extends Activity {
         tvName.setEllipsize(android.text.TextUtils.TruncateAt.END);
         LinearLayout.LayoutParams np = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
         np.leftMargin = dp(10);
-        row.addView(tvName, np);
+        nameBox.addView(tvName, np);
+
+        row.addView(nameBox, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
 
         row.addView(cell(u.display(PerfMonitor.Dim.CPU), perfDim == PerfMonitor.Dim.CPU));
         row.addView(cell(u.display(PerfMonitor.Dim.MEM), perfDim == PerfMonitor.Dim.MEM));
@@ -538,8 +541,7 @@ public class MainActivity extends Activity {
 
         View div = new View(this);
         div.setBackgroundColor(0x14FFFFFF);
-        LinearLayout.LayoutParams dp2 = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 1);
-        wrap.addView(div, dp2);
+        wrap.addView(div, new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 1));
         return wrap;
     }
 
