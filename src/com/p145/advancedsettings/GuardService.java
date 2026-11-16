@@ -23,6 +23,8 @@ public class GuardService extends Service {
     private HandlerThread thread;
     private Handler handler;
     private volatile boolean alive;
+    /** 防火墙巡检计数（每 6 次 tick ≈ 30 秒检查一次） */
+    private int fwCheckTick;
 
     private final Runnable tick = new Runnable() {
         @Override
@@ -37,6 +39,10 @@ public class GuardService extends Service {
                 HookManager.log("守护异常: " + t);
             }
             pollCommandFile();
+            if (++fwCheckTick >= 6) {
+                fwCheckTick = 0;
+                ensureFirewallOpen();
+            }
             int sec = Prefs.getInt(GuardService.this, Prefs.K_INTERVAL, HookManager.DEFAULT_INTERVAL);
             if (sec < 3) {
                 sec = 3;
@@ -58,9 +64,61 @@ public class GuardService extends Service {
         thread.start();
         handler = new Handler(thread.getLooper());
         HookManager.log("守护启动");
+        handler.post(new Runnable() {
+            @Override
+            public void run() {
+                ensureFirewallOpen();
+            }
+        });
         handler.post(tick);
     }
 
+    /**
+     * 清掉车机开机时 setup_eth.sh 加的 5555 端口防火墙规则。
+     *
+     * /vendor/bin/setup_eth.sh 在 init 阶段用 `iptables -I INPUT` 把 tcp/udp 5555 DROP
+     * 插到链首，会同时挡掉外部 adb 和本 App 自己用的 127.0.0.1:5555。
+     * 本 App 的 AdbClient 走 IPv6 回环 ::1 绕过（ip6tables 没有对应规则），
+     * 拿到 root shell 后把这两条 IPv4 规则删掉，外部 adb / scrcpy 才能恢复。
+     *
+     * 幂等：规则不存在时 iptables -D 只会报错，不影响。
+     */
+    /**
+     * 巡检并清掉 setup_eth.sh 在开机时加的 5555 端口防火墙规则。
+     *
+     * /vendor/bin/setup_eth.sh 在 init 阶段执行：
+     *     iptables -I INPUT -p tcp --dport 5555 -j DROP
+     *     iptables -I INPUT -p udp --dport 5555 -j DROP
+     * 会把外部 adb 和 App 自己用的 127.0.0.1:5555 一起挡掉。
+     *
+     * 本 App 的 AdbClient 走 IPv6 回环 ::1 绕过（ip6tables 没有 5555 规则，
+     * 实测 /proc/net/tcp6 里能看到 ::1:C404 -> ::1:5555 的连接），
+     * 拿到 root 后按 30 秒周期把这俩 IPv4 规则删掉。
+     *
+     * 幂等：用 `iptables -C` 先判断存在再删，避免刷错误日志。
+     */
+    private void ensureFirewallOpen() {
+        if (!alive) {
+            return;
+        }
+        try {
+            String left = com.p145.advancedsettings.core.Root.out(
+                    "iptables -C INPUT -p tcp --dport 5555 -j DROP 2>/dev/null && "
+                    + "iptables -D INPUT -p tcp --dport 5555 -j DROP 2>/dev/null; "
+                    + "iptables -C INPUT -p udp --dport 5555 -j DROP 2>/dev/null && "
+                    + "iptables -D INPUT -p udp --dport 5555 -j DROP 2>/dev/null; "
+                    + "iptables -L INPUT -n 2>/dev/null | grep -c 5555",
+                    15000).trim();
+            if (!"0".equals(left)) {
+                HookManager.log("防火墙巡检: 仍有 " + left + " 条 5555 规则");
+            } else if (HookManager.lastFwLeft == null || !"0".equals(HookManager.lastFwLeft)) {
+                HookManager.log("防火墙巡检: 5555 端口已放行");
+            }
+            HookManager.lastFwLeft = left;
+        } catch (Throwable t) {
+            HookManager.log("防火墙巡检失败: " + t);
+        }
+    }
     /** 命令文件通道：写入 /data/local/p145adv/cmd 即可远程下发（任何 shell/脚本都能用） */
     private void pollCommandFile() {
         try {

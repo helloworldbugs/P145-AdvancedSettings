@@ -22,6 +22,8 @@ public final class HookManager {
 
     public static final String TAG = "P145ADV";
     public static final String WORK = "/data/local/p145adv";
+    /** 上一次防火墙巡检的结果（空 = 没巡检过） */
+    public static volatile String lastFwLeft;
     public static final int SCRIPT_VERSION = 3;
     public static final int DEFAULT_INTERVAL = 5;
 

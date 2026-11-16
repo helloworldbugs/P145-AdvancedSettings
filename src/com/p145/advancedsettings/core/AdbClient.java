@@ -4,6 +4,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
@@ -48,11 +49,35 @@ public final class AdbClient {
         }
     }
 
+    /**
+     * 连 adbd：优先 IPv6 回环 ::1。
+     * 车机在 setup_eth.sh 里用 iptables(IPv4) 把 5555 端口 DROP 掉，
+     * 但 adbd 同时监听 [::]:5555，而 ip6tables 没有对应规则 —— 走 IPv6 可以绕过，
+     * 拿到 root 后再把 IPv4 的规则删掉，外部 adb 就恢复了。
+     */
+    private static Socket open() throws IOException {
+        IOException last = null;
+        for (String host : new String[]{"::1", "127.0.0.1"}) {
+            Socket s = new Socket();
+            try {
+                s.connect(new InetSocketAddress(InetAddress.getByName(host), PORT), 1500);
+                s.setSoTimeout(800);
+                s.setTcpNoDelay(true);
+                return s;
+            } catch (IOException e) {
+                last = e;
+                try {
+                    s.close();
+                } catch (IOException ignored) {
+                }
+            }
+        }
+        throw last != null ? last : new IOException("adbd 不可达");
+    }
+
     public static String exec(String command, int timeoutMs) throws IOException {
-        Socket socket = new Socket();
+        Socket socket = open();
         try {
-            socket.connect(new InetSocketAddress(HOST, PORT), 2500);
-            socket.setSoTimeout(800);
             socket.setTcpNoDelay(true);
             OutputStream out = socket.getOutputStream();
             InputStream in = socket.getInputStream();

@@ -1214,7 +1214,7 @@
                                     style="@style/T1"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:text="高级设置 v1.7"
+                                    android:text="高级设置 v1.8"
                                     android:textSize="24sp" />
 
                                 <TextView
