@@ -16,6 +16,8 @@ public final class Prefs {
     public static final String K_LAST_PID = "pid_";
     public static final String K_LAST_OK = "ok_";
     public static final String K_FRIDA_VER = "frida_ver";
+    public static final String K_BOOT_SCRIPT = "boot_script";
+    public static final String K_BOOT_ON = "boot_script_on";
 
     private Prefs() {
     }

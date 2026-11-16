@@ -43,7 +43,11 @@ public class GuardService extends Service {
                 fwCheckTick = 0;
                 ensureFirewallOpen();
             }
-            int sec = Prefs.getInt(GuardService.this, Prefs.K_INTERVAL, HookManager.DEFAULT_INTERVAL);
+            int sec = HookManager.DEFAULT_INTERVAL;
+            try {
+                sec = Prefs.getInt(GuardService.this, Prefs.K_INTERVAL, HookManager.DEFAULT_INTERVAL);
+            } catch (Throwable ignored) {
+            }
             if (sec < 3) {
                 sec = 3;
             }
@@ -57,7 +61,11 @@ public class GuardService extends Service {
         alive = true;
         HookManager.guardRunning = true;
         // 不管是开机广播、界面还是外部 am start-foreground-service 拉起来的，都视为「守护开启」
-        Prefs.setBool(this, Prefs.K_GUARD, true);
+        try {
+            Prefs.setBool(this, Prefs.K_GUARD, true);
+        } catch (Throwable ignored) {
+            // LOCKED_BOOT_COMPLETED 阶段 credential 存储还没挂载
+        }
         createChannel();
         startForeground(NOTI_ID, buildNotification(null));
         thread = new HandlerThread("adv-guard");
@@ -67,11 +75,34 @@ public class GuardService extends Service {
         handler.post(new Runnable() {
             @Override
             public void run() {
+                runBootScript();
                 ensureFirewallOpen();
             }
         });
         handler.post(tick);
     }
+    /** 执行用户配置的开机自启脚本（/data/local/p145adv/boot.sh） */
+    private void runBootScript() {
+        boolean on = false;
+        try {
+            on = Prefs.getBool(this, Prefs.K_BOOT_ON, false);
+        } catch (Throwable ignored) {
+            // direct boot 阶段读不到
+        }
+        if (!on) {
+            return;
+        }
+        String path = HookManager.WORK + "/boot.sh";
+        try {
+            com.p145.advancedsettings.core.Root.R r = com.p145.advancedsettings.core.Root.sh(
+                    "if [ -x " + path + " ]; then sh " + path + " > " + HookManager.WORK + "/boot.log 2>&1; echo __done; fi",
+                    60000);
+            HookManager.log("开机脚本: " + (r.ok() ? "ok" : r.out));
+        } catch (Throwable t) {
+            HookManager.log("开机脚本失败: " + t);
+        }
+    }
+
 
     /**
      * 清掉车机开机时 setup_eth.sh 加的 5555 端口防火墙规则。

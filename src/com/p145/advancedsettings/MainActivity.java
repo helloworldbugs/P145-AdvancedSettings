@@ -11,6 +11,7 @@ import android.os.Handler;
 import android.os.Looper;
 import android.graphics.drawable.Drawable;
 import android.view.View;
+import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
@@ -36,8 +37,8 @@ public class MainActivity extends Activity {
     private static final int[] INTERVALS = {3, 5, 10, 15, 30};
     private static final String K_PAGE = "last_page";
 
-    private static final String[] PAGES = {"overview", "voice", "volume", "perf", "about"};
-    private static final String[] TITLES = {"概览", "语音", "媒体", "性能", "关于"};
+    private static final String[] PAGES = {"overview", "voice", "volume", "perf", "cmd", "about"};
+    private static final String[] TITLES = {"概览", "语音", "媒体", "性能", "命令", "关于"};
 
     private final Handler ui = new Handler(Looper.getMainLooper());
     private final ExecutorService pool = Executors.newSingleThreadExecutor();
@@ -77,6 +78,13 @@ public class MainActivity extends Activity {
         }
     };
 
+    // ---- 命令页 ----
+    private EditText edtCmd, edtBootScript;
+    private TextView tvCmdOut, tvCmdState, tvBootState;
+    private PillSwitch swBootScript;
+    private static final String K_BOOT_SCRIPT = "boot_script";
+    private static final String K_BOOT_ON = "boot_script_on";
+
     private TextView sumCpu, sumMem, sumDisk, sumNet;
     private final Map<PerfMonitor.Dim, TextView> hdrViews = new LinkedHashMap<>();
     private final Map<String, String> labelCache = new HashMap<>();
@@ -102,6 +110,7 @@ public class MainActivity extends Activity {
         bindViews();
         wireNav();
         wirePerf();
+        wireCmd();
         wire();
         applyPrefs();
         tvBc.setText(bcText());
@@ -150,12 +159,14 @@ public class MainActivity extends Activity {
         navs.put("voice", findViewById(R.id.nav_voice));
         navs.put("volume", findViewById(R.id.nav_volume));
         navs.put("perf", findViewById(R.id.nav_perf));
+        navs.put("cmd", findViewById(R.id.nav_cmd));
         navs.put("about", findViewById(R.id.nav_about));
 
         pages.put("overview", findViewById(R.id.page_overview));
         pages.put("voice", findViewById(R.id.page_voice));
         pages.put("volume", findViewById(R.id.page_volume));
         pages.put("perf", findViewById(R.id.page_perf));
+        pages.put("cmd", findViewById(R.id.page_cmd));
         pages.put("about", findViewById(R.id.page_about));
 
         for (final String key : PAGES) {
@@ -358,6 +369,151 @@ public class MainActivity extends Activity {
             }
         });
     }
+    // ------------------------------------------------------------ 命令页
+
+    private void wireCmd() {
+        edtCmd = findViewById(R.id.edt_cmd);
+        edtBootScript = findViewById(R.id.edt_boot_script);
+        tvCmdOut = findViewById(R.id.tv_cmd_out);
+        tvCmdState = findViewById(R.id.tv_cmd_state);
+        tvBootState = findViewById(R.id.tv_boot_state);
+        swBootScript = findViewById(R.id.sw_boot_script);
+
+        findViewById(R.id.btn_run_cmd).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                runCmd();
+            }
+        });
+        findViewById(R.id.btn_clear_out).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                tvCmdOut.setText("（已清空）");
+                tvCmdState.setText("");
+            }
+        });
+
+        findViewById(R.id.chip_fw).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                edtCmd.setText("iptables -L INPUT -n | head -40");
+            }
+        });
+        findViewById(R.id.chip_df).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                edtCmd.setText("df -h /data; echo ---; du -sh /data/data/* 2>/dev/null | sort -rh | head -10");
+            }
+        });
+        findViewById(R.id.chip_bootlog).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                edtCmd.setText("logcat -d -v brief | grep -E P145ADV | tail -40");
+            }
+        });
+
+        try {
+            String saved = Prefs.getStr(this, K_BOOT_SCRIPT, "");
+            if (saved != null) {
+                edtBootScript.setText(saved);
+            }
+            swBootScript.setChecked(Prefs.getBool(this, K_BOOT_ON, false));
+        } catch (Throwable ignored) {
+        }
+
+        swBootScript.setOnCheckedChangeListener(new PillSwitch.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChange(PillSwitch v, boolean c) {
+                Prefs.setBool(MainActivity.this, K_BOOT_ON, c);
+                saveBootScript(c ? "已启用" : "已停用");
+            }
+        });
+
+        findViewById(R.id.btn_save_boot).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                saveBootScript("已保存");
+            }
+        });
+
+        updateBootState();
+    }
+
+    private void runCmd() {
+        final String cmd = edtCmd.getText().toString().trim();
+        if (cmd.isEmpty()) {
+            tvCmdState.setText("先输入命令");
+            return;
+        }
+        tvCmdState.setText("执行中…");
+        pool.execute(new Runnable() {
+            @Override
+            public void run() {
+                String out;
+                long t0 = System.currentTimeMillis();
+                try {
+                    out = Root.out(cmd, 30000);
+                } catch (Throwable e) {
+                    out = "执行异常: " + e;
+                }
+                final String text = stripAnsi(out == null || out.isEmpty() ? "（无输出）" : out);
+                final long cost = System.currentTimeMillis() - t0;
+                ui.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        tvCmdOut.setText(text.length() > 20000 ? text.substring(0, 20000) + "\n…(截断)" : text);
+                        tvCmdState.setText("完成 " + cost + " ms");
+                    }
+                });
+            }
+        });
+    }
+
+    /** 去掉命令输出里的 ANSI 颜色控制符，否则 TextView 里会显示乱码 */
+    private static String stripAnsi(String s) {
+        return s.replaceAll("\\u001B\\[[0-9;]*[A-Za-z]", "");
+    }
+
+    private void saveBootScript(final String okText) {
+        final String script = edtBootScript.getText().toString();
+        Prefs.setStr(this, K_BOOT_SCRIPT, script);
+        Prefs.setBool(this, K_BOOT_ON, swBootScript.isChecked());
+        pool.execute(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    String b64 = android.util.Base64.encodeToString(
+                            script.getBytes("UTF-8"), android.util.Base64.NO_WRAP);
+                    String path = HookManager.WORK + "/boot.sh";
+                    Root.sh("mkdir -p " + HookManager.WORK, 8000);
+                    Root.sh("echo " + b64 + " | base64 -d > " + path + " && chmod 755 " + path, 15000);
+                    ui.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            tvBootState.setText(okText + " · " + HookManager.WORK + "/boot.sh");
+                        }
+                    });
+                } catch (Throwable e) {
+                    ui.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            tvBootState.setText("保存失败: " + e);
+                        }
+                    });
+                }
+            }
+        });
+    }
+
+    private void updateBootState() {
+        try {
+            boolean on = Prefs.getBool(this, K_BOOT_ON, false);
+            String s = Prefs.getStr(this, K_BOOT_SCRIPT, "");
+            tvBootState.setText(on ? ("已启用 · " + (s.isEmpty() ? "脚本为空" : "开机执行")) : "未启用");
+        } catch (Throwable ignored) {
+        }
+    }
+
 
     /** 标题下方的「展开详情」折叠区 */
     // ------------------------------------------------------------ 性能页
@@ -642,7 +798,7 @@ public class MainActivity extends Activity {
 
     private String aboutText() {
         return "包名　com.p145.advancedsettings\n"
-                + "版本　1.8 (versionCode 9)\n"
+                + "版本　1.9 (versionCode 10)\n"
                 + "签名　平台公签 platform.pk8 / x509.pem\n"
                 + "通道　127.0.0.1:5555（adbd root）\n"
                 + "运行时　frida-inject 16.7.19\n"
@@ -781,7 +937,7 @@ public class MainActivity extends Activity {
                 + Prefs.getInt(this, Prefs.K_INTERVAL, HookManager.DEFAULT_INTERVAL) + " 秒巡检"
                 : "守护已关闭或未启动");
 
-        tvFooter.setText(running ? "v1.8 · 守护运行中" : "v1.8 · 守护已停止");
+        tvFooter.setText(running ? "v1.9 · 守护运行中" : "v1.9 · 守护已停止");
 
         List<String> logs = HookManager.getLog();
         StringBuilder tail = new StringBuilder();

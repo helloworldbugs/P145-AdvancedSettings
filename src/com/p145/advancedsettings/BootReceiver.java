@@ -17,7 +17,13 @@ public class BootReceiver extends BroadcastReceiver {
     @Override
     public void onReceive(Context context, Intent intent) {
         String action = intent == null ? "" : String.valueOf(intent.getAction());
-        boolean guard = Prefs.getBool(context, Prefs.K_GUARD, true);
+        // LOCKED_BOOT_COMPLETED 在用户解锁前到达，此时 credential 加密存储还没挂载，
+        // 读 SharedPreferences 可能拿不到值甚至抛异常 —— 用默认值兜底，别让广播挂掉。
+        boolean guard = true;
+        try {
+            guard = Prefs.getBool(context, Prefs.K_GUARD, true);
+        } catch (Throwable ignored) {
+        }
         HookManager.log("开机/唤醒广播 " + action + " guard=" + guard);
         if (!guard) {
             return;
