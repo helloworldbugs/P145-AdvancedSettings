@@ -1,4 +1,4 @@
-# 高级设置（P145 车机自用 Hook 控制台）
+# 高级设置（2025 款吉利银河星舰 7 车机 Hook 控制台）
 
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](LICENSE)
 [![Gitee](https://img.shields.io/badge/Gitee-magiskalive%2FP145--AdvancedSettings-c71d23)](https://gitee.com/magiskalive/P145-AdvancedSettings)
@@ -8,7 +8,7 @@
 > 衍生作品必须同样以 AGPL-3.0 开源并保留原作者署名；**商业使用请先联系作者获得授权**。
 > 作者：**神楽（magiskalive）** · 更新源：[Gitee](https://gitee.com/magiskalive/P145-AdvancedSettings/releases) / [GitHub](https://github.com/helloworldbugs/P145-AdvancedSettings/releases)
 
-吉利 P145 车机（Flyme Auto / Android 9 / MTK）上自用的一套**系统级工具集**，
+**2025 款吉利银河星舰 7**（Flyme Auto / Android 9 / MTK）上自用的一套**系统级工具集**，
 把车机改造、调试、监控能力收进一个可视化控制台：
 
 - **Frida Hook** —— 按需改变 App 运行时行为，目标进程重启后自动补挂
