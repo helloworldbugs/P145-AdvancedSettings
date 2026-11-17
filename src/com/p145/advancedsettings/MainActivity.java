@@ -21,6 +21,7 @@ import android.widget.Toast;
 import com.p145.advancedsettings.core.HookManager;
 import com.p145.advancedsettings.core.PerfMonitor;
 import com.p145.advancedsettings.core.Prefs;
+import com.p145.advancedsettings.core.Updater;
 import com.p145.advancedsettings.core.Root;
 import com.p145.advancedsettings.core.Targets;
 import com.p145.advancedsettings.ui.PillSwitch;
@@ -49,6 +50,10 @@ public class MainActivity extends Activity {
     private View dotAdb, dotRoot, dotFrida, dotIcc;
     private TextView tvAdb, tvAdbSub, tvRoot, tvRootSub, tvFrida, tvFridaSub;
     private View dotFw;
+    // ---- 更新 ----
+    private TextView tvUpdCur, tvUpdState, tvUpdNotes, btnUpdCheck, btnUpdInstall;
+    private volatile Updater.Info updInfo;
+    private volatile boolean updBusy;
     private TextView tvFw, tvFwSub;
     private TextView tvGuardPill, tvIccState, tvIccPid, tvChipCar, tvChipKey, tvChipKnob;
     private TextView tvGuardState, tvInterval, tvBc, tvFooter, tvSection;
@@ -113,6 +118,7 @@ public class MainActivity extends Activity {
         wireNav();
         wirePerf();
         wireCmd();
+        wireUpdate();
         wire();
         applyPrefs();
         tvBc.setText(bcText());
@@ -371,6 +377,119 @@ public class MainActivity extends Activity {
             @Override
             public void onClick(View v) {
                 refresh(false);
+            }
+        });
+    }
+    // ------------------------------------------------------------ 更新
+
+    private void wireUpdate() {
+        tvUpdCur = findViewById(R.id.tv_upd_cur);
+        tvUpdState = findViewById(R.id.tv_upd_state);
+        tvUpdNotes = findViewById(R.id.tv_upd_notes);
+        btnUpdCheck = findViewById(R.id.btn_upd_check);
+        btnUpdInstall = findViewById(R.id.btn_upd_install);
+
+        tvUpdCur.setText("当前 v" + Updater.localVersionName(this)
+                + " (" + Updater.localVersionCode(this) + ")");
+
+        btnUpdCheck.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                checkUpdate();
+            }
+        });
+        btnUpdInstall.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                installUpdate();
+            }
+        });
+    }
+
+    private void checkUpdate() {
+        if (updBusy) {
+            return;
+        }
+        updBusy = true;
+        btnUpdCheck.setEnabled(false);
+        btnUpdInstall.setVisibility(View.GONE);
+        tvUpdNotes.setVisibility(View.GONE);
+        tvUpdState.setText("检查中…");
+        pool.execute(new Runnable() {
+            @Override
+            public void run() {
+                final Updater.Info info = Updater.check();
+                final int local = Updater.localVersionCode(MainActivity.this);
+                ui.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        updBusy = false;
+                        btnUpdCheck.setEnabled(true);
+                        updInfo = info;
+                        if (!info.ok) {
+                            tvUpdState.setText("检查失败：" + info.error);
+                            return;
+                        }
+                        if (info.versionCode > local) {
+                            tvUpdState.setText("发现新版本 v" + info.versionName
+                                    + "（当前 " + local + " → " + info.versionCode + "）");
+                            tvUpdNotes.setText(info.notes);
+                            tvUpdNotes.setVisibility(View.VISIBLE);
+                            btnUpdInstall.setVisibility(View.VISIBLE);
+                        } else {
+                            tvUpdState.setText("已是最新（v" + info.versionName + "）");
+                        }
+                    }
+                });
+            }
+        });
+    }
+
+    private void installUpdate() {
+        final Updater.Info info = updInfo;
+        if (info == null || !info.ok || updBusy) {
+            return;
+        }
+        updBusy = true;
+        btnUpdInstall.setEnabled(false);
+        tvUpdState.setText("下载中…");
+        pool.execute(new Runnable() {
+            @Override
+            public void run() {
+                String path = Updater.download(info, MainActivity.this);
+                if (path == null) {
+                    ui.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            updBusy = false;
+                            btnUpdInstall.setEnabled(true);
+                            tvUpdState.setText("下载失败，检查网络后重试");
+                        }
+                    });
+                    return;
+                }
+                ui.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        tvUpdState.setText("正在安装…");
+                    }
+                });
+                final String err = Updater.install(path);
+                ui.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        updBusy = false;
+                        btnUpdInstall.setEnabled(true);
+                        if (err == null) {
+                            tvUpdState.setText("安装完成，重启 App 生效");
+                            btnUpdInstall.setVisibility(View.GONE);
+                            Toast.makeText(MainActivity.this,
+                                    "已更新，重启 App 生效", Toast.LENGTH_LONG).show();
+                        } else {
+                            tvUpdState.setText("安装失败：" + err);
+                        }
+                    }
+                });
             }
         });
     }
@@ -812,7 +931,7 @@ public class MainActivity extends Activity {
 
     private String aboutText() {
         return "包名　com.p145.advancedsettings\n"
-                + "版本　2.3 (versionCode 14)\n"
+                + "版本　2.4 (versionCode 15)\n"
                 + "签名　平台公签 platform.pk8 / x509.pem\n"
                 + "通道　" + adbChannel() + "（adbd root）\n"
                 + "运行时　frida-inject 16.7.19\n"
@@ -971,7 +1090,7 @@ public class MainActivity extends Activity {
                 + Prefs.getInt(this, Prefs.K_INTERVAL, HookManager.DEFAULT_INTERVAL) + " 秒巡检"
                 : "守护已关闭或未启动");
 
-        tvFooter.setText(running ? "v2.3 · 守护运行中" : "v2.3 · 守护已停止");
+        tvFooter.setText(running ? "v2.4 · 守护运行中" : "v2.4 · 守护已停止");
 
         List<String> logs = HookManager.getLog();
         StringBuilder tail = new StringBuilder();

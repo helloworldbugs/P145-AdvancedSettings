@@ -1,9 +1,9 @@
 {
-  "mirror": "https://github.com/helloworldbugs/P145-AdvancedSettings/releases/download/v2.3/advanced-settings.apk",
+  "versionCode": 15,
+  "versionName": "2.4",
+  "mirror": "https://github.com/helloworldbugs/P145-AdvancedSettings/releases/download/v2.4/advanced-settings.apk",
   "minVersionCode": 1,
-  "at": "2026-11-17",
-  "versionCode": 14,
-  "versionName": "2.3",
-  "url": "https://gitee.com/magiskalive/P145-AdvancedSettings/releases/download/v2.3/advanced-settings.apk",
-  "notes": "概览页新增防火墙状态卡；ADB 通道显示真实回环；启动固定进概览；开机自动放行 5555"
+  "url": "https://gitee.com/magiskalive/P145-AdvancedSettings/releases/download/v2.4/advanced-settings.apk",
+  "notes": "新增「检查更新」：自动比对 version.json、下载并 root 静默安装；版本页显示当前版本号",
+  "at": "2026-11-17"
 }
