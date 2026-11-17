@@ -482,6 +482,58 @@
                                         android:textColor="@color/text3"
                                         android:textSize="13sp" />
                                 </LinearLayout>
+                                <LinearLayout
+                                    style="@style/Card"
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginLeft="16dp"
+                                    android:layout_weight="1"
+                                    android:paddingLeft="24dp"
+                                    android:paddingTop="20dp"
+                                    android:paddingRight="24dp"
+                                    android:paddingBottom="20dp">
+
+                                    <LinearLayout
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:gravity="center_vertical"
+                                        android:orientation="horizontal">
+
+                                        <View
+                                            android:id="@+id/dot_fw"
+                                            android:layout_width="10dp"
+                                            android:layout_height="10dp"
+                                            android:background="@drawable/dot_idle" />
+
+                                        <TextView
+                                            android:layout_width="wrap_content"
+                                            android:layout_height="wrap_content"
+                                            android:layout_marginLeft="10dp"
+                                            android:text="防火墙"
+                                            android:textColor="@color/text2"
+                                            android:textSize="16sp" />
+                                    </LinearLayout>
+
+                                    <TextView
+                                        android:id="@+id/tv_fw"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:layout_marginTop="8dp"
+                                        android:includeFontPadding="false"
+                                        android:text="—"
+                                        android:textColor="@color/text"
+                                        android:textSize="30sp"
+                                        android:textStyle="bold" />
+
+                                    <TextView
+                                        android:id="@+id/tv_fw_sub"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:layout_marginTop="4dp"
+                                        android:text="5555 端口"
+                                        android:textColor="@color/text3"
+                                        android:textSize="13sp" />
+                                </LinearLayout>
                             </LinearLayout>
 
                             <!-- 功能摘要 -->
@@ -1486,7 +1538,7 @@
                                     style="@style/T1"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:text="高级设置 v2.2"
+                                    android:text="高级设置 v2.3"
                                     android:textSize="24sp" />
 
                                 <TextView

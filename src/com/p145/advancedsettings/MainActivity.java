@@ -48,6 +48,8 @@ public class MainActivity extends Activity {
 
     private View dotAdb, dotRoot, dotFrida, dotIcc;
     private TextView tvAdb, tvAdbSub, tvRoot, tvRootSub, tvFrida, tvFridaSub;
+    private View dotFw;
+    private TextView tvFw, tvFwSub;
     private TextView tvGuardPill, tvIccState, tvIccPid, tvChipCar, tvChipKey, tvChipKnob;
     private TextView tvGuardState, tvInterval, tvBc, tvFooter, tvSection;
     private TextView tvSumIcc, tvSumVol, tvAbout, tvLogTail;
@@ -132,6 +134,9 @@ public class MainActivity extends Activity {
         tvRootSub = findViewById(R.id.tv_root_sub);
         tvFrida = findViewById(R.id.tv_frida);
         tvFridaSub = findViewById(R.id.tv_frida_sub);
+        dotFw = findViewById(R.id.dot_fw);
+        tvFw = findViewById(R.id.tv_fw);
+        tvFwSub = findViewById(R.id.tv_fw_sub);
         tvGuardPill = findViewById(R.id.tv_guard_pill);
         tvIccState = findViewById(R.id.tv_icc_state);
         tvIccPid = findViewById(R.id.tv_icc_pid);
@@ -511,10 +516,7 @@ public class MainActivity extends Activity {
         if (h == null || h.isEmpty()) {
             return "::1 / 127.0.0.1 :5555";
         }
-        if ("::1".equals(h)) {
-            return "::1:5555 · IPv6 回环";
-        }
-        return h + ":5555 · IPv4 回环";
+        return h + ":5555";
     }
 
     private void updateBootState() {
@@ -810,7 +812,7 @@ public class MainActivity extends Activity {
 
     private String aboutText() {
         return "包名　com.p145.advancedsettings\n"
-                + "版本　2.2 (versionCode 13)\n"
+                + "版本　2.3 (versionCode 14)\n"
                 + "签名　平台公签 platform.pk8 / x509.pem\n"
                 + "通道　" + adbChannel() + "（adbd root）\n"
                 + "运行时　frida-inject 16.7.19\n"
@@ -889,6 +891,26 @@ public class MainActivity extends Activity {
         tvFrida.setTextColor(color(st.fridaOk ? R.color.text : R.color.warn));
         tvFridaSub.setText(st.fridaOk ? "frida-inject16" : "需 frida-inject16");
 
+        // 防火墙：5555 端口还剩几条 DROP 规则
+        if (dotFw != null && tvFw != null) {
+            if (st.fwRules < 0) {
+                dotFw.setBackgroundResource(R.drawable.dot_idle);
+                tvFw.setText("—");
+                tvFw.setTextColor(color(R.color.text));
+                tvFwSub.setText("5555 端口 · 未知");
+            } else if (st.fwRules == 0) {
+                dotFw.setBackgroundResource(R.drawable.dot_ok);
+                tvFw.setText("已放行");
+                tvFw.setTextColor(color(R.color.ok));
+                tvFwSub.setText("5555 端口 · 0 条规则");
+            } else {
+                dotFw.setBackgroundResource(R.drawable.dot_warn);
+                tvFw.setText("被拦截");
+                tvFw.setTextColor(color(R.color.warn));
+                tvFwSub.setText("5555 端口 · " + st.fwRules + " 条 DROP");
+            }
+        }
+
         boolean iccOn = Prefs.getBool(this, Prefs.K_ICC, true);
         boolean volOn = Prefs.getBool(this, Prefs.K_VOL, true);
         binding = true;
@@ -949,7 +971,7 @@ public class MainActivity extends Activity {
                 + Prefs.getInt(this, Prefs.K_INTERVAL, HookManager.DEFAULT_INTERVAL) + " 秒巡检"
                 : "守护已关闭或未启动");
 
-        tvFooter.setText(running ? "v2.2 · 守护运行中" : "v2.2 · 守护已停止");
+        tvFooter.setText(running ? "v2.3 · 守护运行中" : "v2.3 · 守护已停止");
 
         List<String> logs = HookManager.getLog();
         StringBuilder tail = new StringBuilder();

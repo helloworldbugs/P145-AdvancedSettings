@@ -59,6 +59,8 @@ public final class HookManager {
         public String fridaVer = "";
         public String fridaPath = "";
         public String lastError = "";
+        /** 5555 端口的 iptables 规则数；-1 = 未知 */
+        public int fwRules = -1;
         public boolean iccOn;
         public boolean volOn;
         public long at;
@@ -287,6 +289,7 @@ public final class HookManager {
                 StringBuilder pc = new StringBuilder();
                 pc.append("echo \"U=$(id -u)\"; ");
                 pc.append("echo \"X=$(test -x ").append(WORK).append("/frida-inject16 && echo 1 || echo 0)\"; ");
+                pc.append("echo \"F=$(iptables -L INPUT -n 2>/dev/null | grep -c 5555)\"; ");
                 for (Targets.T t : Targets.ALL) {
                     pc.append("echo \"@").append(t.pkg).append("=$(pidof ").append(t.pkg).append(")\"; ");
                 }
@@ -313,6 +316,11 @@ public final class HookManager {
                         uid = line.substring(2).trim();
                     } else if (line.startsWith("X=")) {
                         hasRuntime = "1".equals(line.substring(2).trim());
+                    } else if (line.startsWith("F=")) {
+                        try {
+                            st.fwRules = Integer.parseInt(line.substring(2).trim());
+                        } catch (Exception ignored) {
+                        }
                     } else if (line.startsWith("@")) {
                         int eq = line.indexOf('=');
                         if (eq > 1) {
