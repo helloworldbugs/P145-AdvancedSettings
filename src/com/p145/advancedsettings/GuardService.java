@@ -81,6 +81,30 @@ public class GuardService extends Service {
         });
         handler.post(tick);
     }
+    /**
+     * 把自己加进 Doze（电池优化）白名单。
+     *
+     * 这台车机只给白名单里的应用投递 BOOT_COMPLETED：实测 EVCC、AVM、停车守卫、
+     * 智能影像、linghmi 都在 /data/system/deviceidle.xml 里，而白名单外的第三方应用
+     * 开机时根本不会被 am_proc_start 唤醒 —— 这就是之前自启动失败的真因。
+     *
+     * 白名单写入后立即生效并持久化，重启不丢。
+     */
+    private void ensureWhitelist() {
+        String pkg = getPackageName();
+        try {
+            String n = com.p145.advancedsettings.core.Root.out(
+                    "dumpsys deviceidle whitelist 2>/dev/null | grep -c " + pkg, 10000).trim();
+            if (!"0".equals(n)) {
+                return;
+            }
+            com.p145.advancedsettings.core.Root.sh(
+                    "dumpsys deviceidle whitelist +" + pkg, 10000);
+            HookManager.log("已加入 Doze 白名单: " + pkg);
+        } catch (Throwable t) {
+            HookManager.log("Doze 白名单检查失败: " + t);
+        }
+    }
     /** 执行用户配置的开机自启脚本（/data/local/p145adv/boot.sh） */
     private void runBootScript() {
         boolean on = false;

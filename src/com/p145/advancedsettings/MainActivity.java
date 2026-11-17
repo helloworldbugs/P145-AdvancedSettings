@@ -798,7 +798,7 @@ public class MainActivity extends Activity {
 
     private String aboutText() {
         return "包名　com.p145.advancedsettings\n"
-                + "版本　1.9 (versionCode 10)\n"
+                + "版本　2.0 (versionCode 11)\n"
                 + "签名　平台公签 platform.pk8 / x509.pem\n"
                 + "通道　127.0.0.1:5555（adbd root）\n"
                 + "运行时　frida-inject 16.7.19\n"
@@ -937,7 +937,7 @@ public class MainActivity extends Activity {
                 + Prefs.getInt(this, Prefs.K_INTERVAL, HookManager.DEFAULT_INTERVAL) + " 秒巡检"
                 : "守护已关闭或未启动");
 
-        tvFooter.setText(running ? "v1.9 · 守护运行中" : "v1.9 · 守护已停止");
+        tvFooter.setText(running ? "v2.0 · 守护运行中" : "v2.0 · 守护已停止");
 
         List<String> logs = HookManager.getLog();
         StringBuilder tail = new StringBuilder();
