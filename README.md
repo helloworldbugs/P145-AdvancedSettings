@@ -8,28 +8,38 @@
 > 衍生作品必须同样以 AGPL-3.0 开源并保留原作者署名；**商业使用请先联系作者获得授权**。
 > 作者：**神楽（magiskalive）** · 更新源：[Gitee](https://gitee.com/magiskalive/P145-AdvancedSettings/releases) / [GitHub](https://github.com/helloworldbugs/P145-AdvancedSettings/releases)
 
-吉利用 P145 车机（Flyme Auto / Android 9 / MTK）上自用的一个系统级小工具，
-用 Frida 把两件事做成开关：**屏蔽「智能巡航已退出」语音播报**、**让音量键/方控/旋钮始终只调媒体音量**。
+吉利 P145 车机（Flyme Auto / Android 9 / MTK）上自用的一套**系统级工具集**，
+把车机改造、调试、监控能力收进一个可视化控制台：
 
-> 平台签名、直连本机 adb 拿 root、自带后台守护，**不依赖 EVCC 或任何第三方 App**。
+- **Frida Hook** —— 按需改变 App 运行时行为，目标进程重启后自动补挂
+- **本机 root 通道** —— 平台签名 + 直连 adbd，不依赖 su / Magisk / 第三方 App
+- **常驻守护** —— 前台服务定时巡检，开机自动接管，端口防火墙自动放行
+- **可视化面板** —— 状态、性能、命令、更新都在同一块屏上
 
 - 包名：`com.p145.advancedsettings`
 - 当前版本：**2.4**（versionCode 15，以 `AndroidManifest.xml` 为准）
 - APK 体积：约 82 KB
 - 目标设备：Android 9（API 28）、1920×1080、density 160、adbd 常驻 root
 
+具体能力见下方「[功能一览](#一功能一览)」，会随版本持续增加。
+
 ---
 
-## 一、它能干什么
+## 一、功能一览
 
 | 功能 | 说明 |
 |---|---|
 | 屏蔽巡航退出播报 | Hook DuerOS `SpeechManagerImpl.speakTts(String, boolean, int)`，命中「智能巡航已退出」直接 return：不合成、不播放、不抢音频焦点 |
 | 音量锁媒体 | 三个入口分别 hook，车机音量键 / 方向盘按键 / 旋钮都只改「媒体组」(group 0) |
 | 后台守护 | 前台服务每 N 秒巡检（默认 5s），目标进程重启后自动补挂 hook |
-| 开机自启 | 监听 `BOOT_COMPLETED`，开机自动拉起守护并注入 |
+| 开机自启 | 监听 `BOOT_COMPLETED` / `LOCKED_BOOT_COMPLETED` + 车厂广播，开机自动拉起守护并注入 |
+| **端口防火墙自愈** | 车机 `setup_eth.sh` 每次开机封 5555，本 App 走 IPv6 回环绕过并定期删规则，外部 adb / scrcpy 直接可用 |
+| **性能监控** | 任务管理器风格表格：整机 CPU、内存 PSS、存储已用/总量、上下行实时速率，点表头排序 |
+| **命令终端** | Apps 内以 root 执行任意 shell 命令，输出可复制；可配置开机自启脚本 |
+| **检查更新** | 读 Gitee 的 `version.json`，有新版直接下载并 `pm install -r` 静默安装 |
 | 广播 / 命令文件 | `am broadcast -a com.p145.adv.XXX`，或往 `/data/local/p145adv/cmd` 写一行命令 |
-| 状态可视化 | ADB 通道 / Root / Frida 运行时 / 每个目标进程的注入状态与 PID |
+| 状态可视化 | ADB 通道 / Root / Frida 运行时 / 防火墙 / 每个目标进程的注入状态与 PID |
+
 
 **音量组编号**：`0` 媒体 · `1` 通话 · `2` 语音 · `3` 系统提示 · `4` 导航
 
