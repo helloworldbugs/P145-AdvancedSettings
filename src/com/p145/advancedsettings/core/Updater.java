@@ -65,9 +65,11 @@ public final class Updater {
     /** 拉 version.json（Gitee 优先，失败回退 GitHub raw） */
     public static Info check() {
         Info out = new Info();
-        String body = httpGet(GITEE);
+        // Gitee raw 走 CDN，会缓存几分钟 —— 带时间戳绕开，否则检测不到刚发的版本
+        String bust = "?t=" + (System.currentTimeMillis() / 1000);
+        String body = httpGet(GITEE + bust);
         if (body == null || body.isEmpty()) {
-            body = httpGet(GITHUB);
+            body = httpGet(GITHUB + bust);
         }
         if (body == null || body.isEmpty()) {
             out.error = "无法获取版本信息（网络不可用？）";
