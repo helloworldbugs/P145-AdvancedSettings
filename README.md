@@ -1,13 +1,21 @@
 # 高级设置（P145 车机自用 Hook 控制台）
 
+[![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](LICENSE)
+[![Gitee](https://img.shields.io/badge/Gitee-magiskalive%2FP145--AdvancedSettings-c71d23)](https://gitee.com/magiskalive/P145-AdvancedSettings)
+[![GitHub](https://img.shields.io/badge/GitHub-helloworldbugs%2FP145--AdvancedSettings-181717)](https://github.com/helloworldbugs/P145-AdvancedSettings)
+
+> **许可证**：GNU AGPL-3.0（见 [LICENSE](LICENSE)）
+> 衍生作品必须同样以 AGPL-3.0 开源并保留原作者署名；**商业使用请先联系作者获得授权**。
+> 作者：**神楽（magiskalive）** · 更新源：[Gitee](https://gitee.com/magiskalive/P145-AdvancedSettings/releases) / [GitHub](https://github.com/helloworldbugs/P145-AdvancedSettings/releases)
+
 吉利用 P145 车机（Flyme Auto / Android 9 / MTK）上自用的一个系统级小工具，
 用 Frida 把两件事做成开关：**屏蔽「智能巡航已退出」语音播报**、**让音量键/方控/旋钮始终只调媒体音量**。
 
 > 平台签名、直连本机 adb 拿 root、自带后台守护，**不依赖 EVCC 或任何第三方 App**。
 
 - 包名：`com.p145.advancedsettings`
-- 当前版本：**1.6**（versionCode 7，以 `AndroidManifest.xml` 为准）
-- APK 体积：约 62 KB
+- 当前版本：**2.4**（versionCode 15，以 `AndroidManifest.xml` 为准）
+- APK 体积：约 82 KB
 - 目标设备：Android 9（API 28）、1920×1080、density 160、adbd 常驻 root
 
 ---
@@ -366,3 +374,34 @@ D:\ARM\Auto\P145车机改造记录.md        第 15 章
 ```
 
 > 该文档只在本地维护（2026-11-08 起不再往车机 `/sdcard/Download/` 推副本）。
+
+---
+
+## 许可证
+
+本项目采用 **GNU Affero General Public License v3.0**（AGPL-3.0），全文见 [LICENSE](LICENSE)。
+
+简单说三条你必须遵守的：
+
+1. **衍生必须开源** —— 你基于本项目的任何修改、二次分发，都必须继续使用 AGPL-3.0 并公开源码
+   （包括把它做成网络服务的情况）；
+2. **必须署名** —— 保留原作者的版权声明和项目地址，不能抹掉出处；
+3. **商业使用需授权** —— AGPL 本身不禁止商业使用，但其传染性会让商用方也必须开源；
+   如果你打算闭源商用，请先联系作者取得商业授权。
+
+```
+Copyright (C) 2026 magiskalive (https://gitee.com/magiskalive/P145-AdvancedSettings)
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as published
+by the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+```
