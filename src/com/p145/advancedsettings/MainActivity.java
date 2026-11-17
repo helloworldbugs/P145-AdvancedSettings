@@ -505,6 +505,18 @@ public class MainActivity extends Activity {
         });
     }
 
+    /** 显示实际使用的 adb 通道：IPv6 回环优先，回退 IPv4 */
+    private String adbChannel() {
+        String h = com.p145.advancedsettings.core.AdbClient.lastHost;
+        if (h == null || h.isEmpty()) {
+            return "::1 / 127.0.0.1 :5555";
+        }
+        if ("::1".equals(h)) {
+            return "::1:5555 · IPv6 回环";
+        }
+        return h + ":5555 · IPv4 回环";
+    }
+
     private void updateBootState() {
         try {
             boolean on = Prefs.getBool(this, K_BOOT_ON, false);
@@ -798,9 +810,9 @@ public class MainActivity extends Activity {
 
     private String aboutText() {
         return "包名　com.p145.advancedsettings\n"
-                + "版本　2.1 (versionCode 12)\n"
+                + "版本　2.2 (versionCode 13)\n"
                 + "签名　平台公签 platform.pk8 / x509.pem\n"
-                + "通道　127.0.0.1:5555（adbd root）\n"
+                + "通道　" + adbChannel() + "（adbd root）\n"
                 + "运行时　frida-inject 16.7.19\n"
                 + "工作目录　/data/local/p145adv\n"
                 + "状态文件　/data/local/p145adv/status.json\n"
@@ -865,7 +877,7 @@ public class MainActivity extends Activity {
         dotAdb.setBackgroundResource(st.adbOk ? R.drawable.dot_ok : R.drawable.dot_err);
         tvAdb.setText(st.adbOk ? "已连接" : "未连接");
         tvAdb.setTextColor(color(st.adbOk ? R.color.ok : R.color.err));
-        tvAdbSub.setText(st.adbOk ? "127.0.0.1:5555" : (st.lastError.isEmpty() ? "adbd" : st.lastError));
+        tvAdbSub.setText(st.adbOk ? adbChannel() : (st.lastError.isEmpty() ? "adbd" : st.lastError));
 
         dotRoot.setBackgroundResource(st.rootOk ? R.drawable.dot_ok : R.drawable.dot_err);
         tvRoot.setText(st.rootOk ? "root" : "受限");
@@ -937,7 +949,7 @@ public class MainActivity extends Activity {
                 + Prefs.getInt(this, Prefs.K_INTERVAL, HookManager.DEFAULT_INTERVAL) + " 秒巡检"
                 : "守护已关闭或未启动");
 
-        tvFooter.setText(running ? "v2.1 · 守护运行中" : "v2.1 · 守护已停止");
+        tvFooter.setText(running ? "v2.2 · 守护运行中" : "v2.2 · 守护已停止");
 
         List<String> logs = HookManager.getLog();
         StringBuilder tail = new StringBuilder();

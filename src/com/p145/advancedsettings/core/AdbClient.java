@@ -16,6 +16,8 @@ import java.net.SocketTimeoutException;
 public final class AdbClient {
 
     public static final String HOST = "127.0.0.1";
+    /** 最近一次成功连接用的地址（::1 或 127.0.0.1），供界面显示真实通道 */
+    public static volatile String lastHost = "";
     public static final int PORT = 5555;
 
     private static final int CMD_CNXN = 0x4e584e43;
@@ -63,6 +65,7 @@ public final class AdbClient {
                 s.connect(new InetSocketAddress(InetAddress.getByName(host), PORT), 1500);
                 s.setSoTimeout(800);
                 s.setTcpNoDelay(true);
+                lastHost = host;
                 return s;
             } catch (IOException e) {
                 last = e;
