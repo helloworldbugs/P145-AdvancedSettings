@@ -514,6 +514,12 @@ public class MainActivity extends Activity {
                 runCmd();
             }
         });
+        findViewById(R.id.btn_clear_in).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                edtCmd.setText("");
+            }
+        });
         findViewById(R.id.btn_clear_out).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -927,7 +933,7 @@ public class MainActivity extends Activity {
 
     private String aboutText() {
         return "包名　com.p145.advancedsettings\n"
-                + "版本　2.4.1 (versionCode 16)\n"
+                + "版本　2.4.2 (versionCode 17)\n"
                 + "签名　平台公签 platform.pk8 / x509.pem\n"
                 + "通道　" + adbChannel() + "（adbd root）\n"
                 + "运行时　frida-inject 16.7.19\n"
@@ -1086,7 +1092,7 @@ public class MainActivity extends Activity {
                 + Prefs.getInt(this, Prefs.K_INTERVAL, HookManager.DEFAULT_INTERVAL) + " 秒巡检"
                 : "守护已关闭或未启动");
 
-        tvFooter.setText(running ? "v2.4.1 · 守护运行中" : "v2.4.1 · 守护已停止");
+        tvFooter.setText(running ? "v2.4.2 · 守护运行中" : "v2.4.2 · 守护已停止");
 
         List<String> logs = HookManager.getLog();
         StringBuilder tail = new StringBuilder();

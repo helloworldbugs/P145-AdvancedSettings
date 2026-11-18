@@ -1,9 +1,9 @@
 {
-    "at":  "2026-11-18",
-    "minVersionCode":  1,
-    "versionName":  "2.4.1",
-    "versionCode":  16,
-    "mirror":  "https://github.com/helloworldbugs/P145-AdvancedSettings/releases/download/v2.4.1/advanced-settings.apk",
-    "url":  "https://gitee.com/magiskalive/P145-AdvancedSettings/releases/download/v2.4.1/advanced-settings.apk",
-    "notes":  "性能页卡顿修复：PSS 计算从 22s 移到后台，主采集 4.4s 出数据；加加载动画；移除自动刷新胶囊；命令页支持回车执行"
+  "versionCode": 17,
+  "url": "https://gitee.com/magiskalive/P145-AdvancedSettings/releases/download/v2.4.2/advanced-settings.apk",
+  "mirror": "https://github.com/helloworldbugs/P145-AdvancedSettings/releases/download/v2.4.2/advanced-settings.apk",
+  "versionName": "2.4.2",
+  "minVersionCode": 1,
+  "at": "2026-11-18",
+  "notes": "命令页按钮拆分：「清空输入」放到执行按钮旁，原「清空输出」移到输出卡片右上角"
 }

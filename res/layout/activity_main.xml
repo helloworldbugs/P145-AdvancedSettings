@@ -1334,7 +1334,7 @@
                                         android:textStyle="bold" />
 
                                     <TextView
-                                        android:id="@+id/btn_clear_out"
+                                        android:id="@+id/btn_clear_in"
                                         android:layout_width="wrap_content"
                                         android:layout_height="wrap_content"
                                         android:layout_marginLeft="12dp"
@@ -1343,7 +1343,7 @@
                                         android:paddingTop="10dp"
                                         android:paddingRight="22dp"
                                         android:paddingBottom="10dp"
-                                        android:text="清空输出"
+                                        android:text="清空输入"
                                         android:textColor="@color/text2"
                                         android:textSize="15sp" />
 
@@ -1416,7 +1416,32 @@
                             <!-- 输出 -->
                             <LinearLayout style="@style/Card" android:layout_width="match_parent" android:layout_height="wrap_content">
 
-                                <TextView style="@style/T1" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="输出" />
+                                <LinearLayout
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:gravity="center_vertical"
+                                    android:orientation="horizontal">
+
+                                    <TextView
+                                        style="@style/T1"
+                                        android:layout_width="0dp"
+                                        android:layout_height="wrap_content"
+                                        android:layout_weight="1"
+                                        android:text="输出" />
+
+                                    <TextView
+                                        android:id="@+id/btn_clear_out"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:background="@drawable/btn_ghost"
+                                        android:paddingLeft="20dp"
+                                        android:paddingTop="8dp"
+                                        android:paddingRight="20dp"
+                                        android:paddingBottom="8dp"
+                                        android:text="清空输出"
+                                        android:textColor="@color/text2"
+                                        android:textSize="14sp" />
+                                </LinearLayout>
 
                                 <TextView
                                     android:id="@+id/tv_cmd_out"
@@ -1535,7 +1560,7 @@
                                     style="@style/T1"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:text="高级设置 v2.4.1"
+                                    android:text="高级设置 v2.4.2"
                                     android:textSize="24sp" />
 
                                 <TextView
@@ -1581,7 +1606,7 @@
                                         style="@style/T3"
                                         android:layout_width="wrap_content"
                                         android:layout_height="wrap_content"
-                                        android:text="当前 v2.4.1" />
+                                        android:text="当前 v2.4.2" />
                                 </LinearLayout>
 
                                 <TextView
