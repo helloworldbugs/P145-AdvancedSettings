@@ -1,9 +1,9 @@
 {
   "versionCode": 15,
   "minVersionCode": 1,
-  "at": "2026-11-17",
-  "notes": "新增「检查更新」：自动比对 version.json、下载并 root 静默安装；版本页显示当前版本号",
-  "url": "https://gitee.com/magiskalive/P145-AdvancedSettings/releases/download/v2.4/advanced-settings.apk",
-  "versionName": "2.4",
-  "mirror": "https://github.com/helloworldbugs/P145-AdvancedSettings/releases/download/v2.4/advanced-settings.apk"
+  "mirror": "https://github.com/helloworldbugs/P145-AdvancedSettings/releases/download/v2.4.0/advanced-settings.apk",
+  "versionName": "2.4.0",
+  "at": "2026-11-18",
+  "url": "https://gitee.com/magiskalive/P145-AdvancedSettings/releases/download/v2.4.0/advanced-settings.apk",
+  "notes": "新增「检查更新」：自动比对 version.json、下载并 root 静默安装；版本页显示当前 versionCode"
 }

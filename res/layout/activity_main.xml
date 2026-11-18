@@ -1538,7 +1538,7 @@
                                     style="@style/T1"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:text="高级设置 v2.4"
+                                    android:text="高级设置 v2.4.0"
                                     android:textSize="24sp" />
 
                                 <TextView
@@ -1584,7 +1584,7 @@
                                         style="@style/T3"
                                         android:layout_width="wrap_content"
                                         android:layout_height="wrap_content"
-                                        android:text="当前 v2.4" />
+                                        android:text="当前 v2.4.0" />
                                 </LinearLayout>
 
                                 <TextView
