@@ -1179,18 +1179,15 @@
                                     android:layout_weight="1"
                                     android:text="点「刷新」开始采集" />
 
-                                <TextView
-                                    android:id="@+id/btn_perf_refresh"
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:background="@drawable/btn_ghost"
-                                    android:paddingLeft="20dp"
-                                    android:paddingTop="7dp"
-                                    android:paddingRight="20dp"
-                                    android:paddingBottom="7dp"
-                                    android:text="自动 1 秒"
-                                    android:textColor="@color/accent"
-                                    android:textSize="14sp" />
+                                <ProgressBar
+                                    android:id="@+id/pb_perf"
+                                    style="?android:attr/progressBarStyleSmall"
+                                    android:layout_width="24dp"
+                                    android:layout_height="24dp"
+                                    android:layout_marginRight="12dp"
+                                    android:indeterminateTint="@color/accent"
+                                    android:visibility="gone" />
+
                             </LinearLayout>
 
                             <!-- 表头（点击排序） -->
@@ -1538,7 +1535,7 @@
                                     style="@style/T1"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:text="高级设置 v2.4.0"
+                                    android:text="高级设置 v2.4.1"
                                     android:textSize="24sp" />
 
                                 <TextView
@@ -1584,7 +1581,7 @@
                                         style="@style/T3"
                                         android:layout_width="wrap_content"
                                         android:layout_height="wrap_content"
-                                        android:text="当前 v2.4.0" />
+                                        android:text="当前 v2.4.1" />
                                 </LinearLayout>
 
                                 <TextView

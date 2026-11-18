@@ -23,6 +23,8 @@ public class GuardService extends Service {
     private HandlerThread thread;
     private Handler handler;
     private volatile boolean alive;
+    /** 上次 PSS 预取时间 */
+    private long lastPssAt;
     /** 防火墙巡检计数（每 6 次 tick ≈ 30 秒检查一次） */
     private int fwCheckTick;
 
@@ -39,6 +41,18 @@ public class GuardService extends Service {
                 HookManager.log("守护异常: " + t);
             }
             pollCommandFile();
+            // 每 10 分钟在后台跑一次带 PSS 的采集，只为了刷新 PerfMonitor.PSS_CACHE
+            // （每次约 8 秒，放在守护线程里，不阻塞界面）
+            long nowMs = System.currentTimeMillis();
+            if (nowMs - lastPssAt > 10 * 60 * 1000L) {
+                lastPssAt = nowMs;
+                try {
+                    com.p145.advancedsettings.core.PerfMonitor.collect(GuardService.this, true);
+                    HookManager.log("PSS 预取完成");
+                } catch (Throwable t) {
+                    HookManager.log("PSS 预取失败: " + t);
+                }
+            }
             if (++fwCheckTick >= 6) {
                 fwCheckTick = 0;
                 ensureFirewallOpen();

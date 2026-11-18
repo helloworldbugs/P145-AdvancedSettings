@@ -1,9 +1,9 @@
 {
-  "versionCode": 15,
-  "minVersionCode": 1,
-  "mirror": "https://github.com/helloworldbugs/P145-AdvancedSettings/releases/download/v2.4.0/advanced-settings.apk",
-  "versionName": "2.4.0",
-  "at": "2026-11-18",
-  "url": "https://gitee.com/magiskalive/P145-AdvancedSettings/releases/download/v2.4.0/advanced-settings.apk",
-  "notes": "新增「检查更新」：自动比对 version.json、下载并 root 静默安装；版本页显示当前 versionCode"
+    "at":  "2026-11-18",
+    "minVersionCode":  1,
+    "versionName":  "2.4.1",
+    "versionCode":  16,
+    "mirror":  "https://github.com/helloworldbugs/P145-AdvancedSettings/releases/download/v2.4.1/advanced-settings.apk",
+    "url":  "https://gitee.com/magiskalive/P145-AdvancedSettings/releases/download/v2.4.1/advanced-settings.apk",
+    "notes":  "性能页卡顿修复：PSS 计算从 22s 移到后台，主采集 4.4s 出数据；加加载动画；移除自动刷新胶囊；命令页支持回车执行"
 }

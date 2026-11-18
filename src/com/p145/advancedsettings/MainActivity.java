@@ -69,14 +69,10 @@ public class MainActivity extends Activity {
     private boolean perfBusy;
     private boolean perfLoaded;
     private int perfCollectN;      // 每 3 次采集带一次 PSS
-    private static final int[] PERF_SECS = {1, 2, 3, 0};   // 0 = 关闭
-    private int perfAutoIdx = 0;                            // 默认 1 秒
-    private TextView btnPerfAuto;
-
     private final Runnable perfTick = new Runnable() {
         @Override
         public void run() {
-            int sec = PERF_SECS[perfAutoIdx];
+            int sec = 1;   // 采集本身要 4 秒左右，这里只作"忙则跳过"的节拍
             if (sec <= 0 || !"perf".equals(current)) {
                 return;
             }
@@ -93,6 +89,7 @@ public class MainActivity extends Activity {
     private static final String K_BOOT_ON = "boot_script_on";
 
     private TextView sumCpu, sumMem, sumDisk, sumNet;
+    private android.widget.ProgressBar pbPerf;
     private final Map<PerfMonitor.Dim, TextView> hdrViews = new LinkedHashMap<>();
     private final Map<String, String> labelCache = new HashMap<>();
     private final Map<String, Drawable> iconCache = new HashMap<>();
@@ -237,14 +234,14 @@ public class MainActivity extends Activity {
         }
         ui.removeCallbacks(perfTick);
         if ("perf".equals(key)) {
-            if (!perfLoaded) {
+            if (!perfLoaded || perfSnap == null || perfSnap.apps.isEmpty()) {
                 perfLoaded = true;
                 loadPerf();
             } else {
                 renderPerf();
             }
-            if (PERF_SECS[perfAutoIdx] > 0) {
-                ui.postDelayed(perfTick, PERF_SECS[perfAutoIdx] * 1000L);
+            {
+                ui.postDelayed(perfTick, 1000L);
             }
         }
         if (remember) {
@@ -497,6 +494,14 @@ public class MainActivity extends Activity {
 
     private void wireCmd() {
         edtCmd = findViewById(R.id.edt_cmd);
+        edtCmd.setOnEditorActionListener(new TextView.OnEditorActionListener() {
+            @Override
+            public boolean onEditorAction(TextView v, int actionId, android.view.KeyEvent e) {
+                // 软键盘「完成/回车」直接执行，省得再去点按钮
+                runCmd();
+                return true;
+            }
+        });
         edtBootScript = findViewById(R.id.edt_boot_script);
         tvCmdOut = findViewById(R.id.tv_cmd_out);
         tvCmdState = findViewById(R.id.tv_cmd_state);
@@ -658,6 +663,7 @@ public class MainActivity extends Activity {
         sumMem = findViewById(R.id.sum_mem);
         sumDisk = findViewById(R.id.sum_disk);
         sumNet = findViewById(R.id.sum_net);
+        pbPerf = findViewById(R.id.pb_perf);
 
         hdrViews.put(PerfMonitor.Dim.CPU, findViewById(R.id.hdr_cpu));
         hdrViews.put(PerfMonitor.Dim.MEM, findViewById(R.id.hdr_mem));
@@ -683,36 +689,25 @@ public class MainActivity extends Activity {
             });
         }
 
-        findViewById(R.id.btn_perf_refresh).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                loadPerf();
-            }
-        });
 
         renderPerf();
     }
 
-    private void updatePerfAutoBtn() {
-        if (btnPerfAuto == null) {
-            return;
-        }
-        int sec = PERF_SECS[perfAutoIdx];
-        if (sec > 0) {
-            btnPerfAuto.setText("自动 " + sec + " 秒");
-            btnPerfAuto.setTextColor(color(R.color.accent));
-        } else {
-            btnPerfAuto.setText("已关闭");
-            btnPerfAuto.setTextColor(color(R.color.text3));
-        }
-    }
 
     private void loadPerf() {
         if (perfBusy) {
             return;
         }
         perfBusy = true;
-        final boolean withPss = (perfCollectN++ % 3) == 0;   // 第 1/4/7… 次带 PSS，其余沿用缓存
+        if (pbPerf != null) {
+            pbPerf.setVisibility(View.VISIBLE);
+        }
+        if (tvPerfStatus != null) {
+            tvPerfStatus.setText("正在采集进程数据…（约 3~5 秒）");
+        }
+        // 主采集永远不带 PSS：带 PSS 要 8~22 秒，会把界面卡成"假死"。
+        // PSS 由 GuardService 每 10 分钟在后台预取一次，写进缓存供这里直接用。
+        final boolean withPss = false;
         pool.execute(new Runnable() {
             @Override
             public void run() {
@@ -730,6 +725,9 @@ public class MainActivity extends Activity {
     }
 
     private void renderPerf() {
+        if (pbPerf != null) {
+            pbPerf.setVisibility(View.GONE);
+        }
         // 表头：当前排序列高亮 + 箭头
         for (PerfMonitor.Dim d : PerfMonitor.Dim.values()) {
             TextView h = hdrViews.get(d);
@@ -771,16 +769,14 @@ public class MainActivity extends Activity {
         }
 
         java.text.SimpleDateFormat f = new java.text.SimpleDateFormat("HH:mm:ss", java.util.Locale.US);
-        int autoSec = PERF_SECS[perfAutoIdx];
-        String autoTxt = autoSec > 0 ? ("自动 " + autoSec + " 秒") : "手动";
         int running = 0;
         for (PerfMonitor.AppUsage a : perfSnap.apps) {
             if (a.pid > 0) {
                 running++;
             }
         }
-        tvPerfStatus.setText(String.format("运行 %d · 共 %d 个应用 · 更新于 %s · %s · 点表头换排序",
-                running, perfSnap.processCount, f.format(new java.util.Date(perfSnap.at)), autoTxt));
+        tvPerfStatus.setText(String.format("运行 %d · 共 %d 个应用 · 更新于 %s · 点表头换排序",
+                running, perfSnap.processCount, f.format(new java.util.Date(perfSnap.at))));
 
     }
     /** 表格行：图标 + 应用名 + CPU / 内存 / 磁盘 / 网络 四列 */
@@ -931,7 +927,7 @@ public class MainActivity extends Activity {
 
     private String aboutText() {
         return "包名　com.p145.advancedsettings\n"
-                + "版本　2.4.0 (versionCode 15)\n"
+                + "版本　2.4.1 (versionCode 16)\n"
                 + "签名　平台公签 platform.pk8 / x509.pem\n"
                 + "通道　" + adbChannel() + "（adbd root）\n"
                 + "运行时　frida-inject 16.7.19\n"
@@ -1090,7 +1086,7 @@ public class MainActivity extends Activity {
                 + Prefs.getInt(this, Prefs.K_INTERVAL, HookManager.DEFAULT_INTERVAL) + " 秒巡检"
                 : "守护已关闭或未启动");
 
-        tvFooter.setText(running ? "v2.4.0 · 守护运行中" : "v2.4.0 · 守护已停止");
+        tvFooter.setText(running ? "v2.4.1 · 守护运行中" : "v2.4.1 · 守护已停止");
 
         List<String> logs = HookManager.getLog();
         StringBuilder tail = new StringBuilder();

@@ -164,7 +164,8 @@ done
 
 # =============== 可选 PSS ===============
 if [ "$WITH_PSS" = "pss" ]; then
-  for p in $(echo "$APPS" | awk '{print $2}'); do
+  # 只算 RSS 最大的前 20 个：150 个全算要 22 秒，前 20 个约 3 秒
+  for p in $(echo "$APPS" | awk '{print $4, $2}' | sort -rn | head -20 | awk '{print $2}'); do
     v=$(awk '/^Pss:/{s+=$2} END{printf "%d", s+0}' /proc/$p/smaps 2>/dev/null)
     echo "P $p ${v:-0}"
   done
